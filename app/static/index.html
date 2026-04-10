@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ぽちゃガチョ！客服 AI v2</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f7f8fc;
+      --surface: #ffffff;
+      --surface2: #f0f3f9;
+      --border: #e2e8f0;
+      --text: #1a202c;
+      --muted: #64748b;
+      --accent: #5c53e8;
+      --auto: #16a34a;
+      --review: #ca8a04;
+      --human: #dc2626;
+      --r: 10px;
+    }
+    body { background: var(--bg); color: var(--text);
+           font-family: 'Segoe UI','Noto Sans SC','Noto Sans JP',system-ui,sans-serif;
+           min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Header ── */
+    header { padding: 14px 28px; border-bottom: 1px solid var(--border);
+             background: var(--surface);
+             display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    header h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+    .kb-status { font-size: 12px; color: var(--muted); margin-left: auto;
+                 display: flex; align-items: center; gap: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e0; }
+    .dot.ok { background: var(--auto); }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border);
+            padding: 0 28px; background: var(--surface); }
+    .tab-btn { padding: 10px 20px; font-size: 13px; cursor: pointer;
+               border: none; background: none; color: var(--muted);
+               border-bottom: 2px solid transparent; transition: color 0.15s; }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── Main grid ── */
+    .process-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+                    padding: 20px 28px; }
+    @media (max-width: 900px) { .process-grid { grid-template-columns: 1fr; } }
+
+    /* ── Panels ── */
+    .panel { background: var(--surface); border: 1px solid var(--border);
+             border-radius: var(--r); padding: 18px; display: flex;
+             flex-direction: column; gap: 12px;
+             box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .panel-title { font-size: 11px; font-weight: 700; color: var(--muted);
+                   text-transform: uppercase; letter-spacing: 0.07em; }
+
+    textarea { width: 100%; height: 220px; background: var(--surface2);
+               border: 1px solid var(--border); border-radius: 8px;
+               color: var(--text); font-size: 13px; line-height: 1.7;
+               padding: 10px 12px; resize: vertical; outline: none; font-family: inherit; }
+    textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(92,83,232,0.1); }
+    textarea::placeholder { color: #a0aec0; }
+
+    .btn-primary { background: var(--accent); color: #fff; border: none;
+                   border-radius: 8px; padding: 9px 20px; font-size: 13px;
+                   font-weight: 600; cursor: pointer; align-self: flex-start;
+                   transition: opacity 0.15s; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-copy { background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+                border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+    .btn-copy:hover { background: var(--border); }
+
+    /* ── Translation box ── */
+    .translation-box { background: var(--surface2); border-radius: 8px;
+                        padding: 12px; font-size: 13px; line-height: 1.8;
+                        color: #4a5568; white-space: pre-wrap; min-height: 60px;
+                        max-height: 180px; overflow-y: auto;
+                        border: 1px solid var(--border); }
+
+    /* ── Confidence badge ── */
+    .conf-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .conf-score { font-size: 28px; font-weight: 700; }
+    .level-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .level-AUTO   { background: #dcfce7; color: #166534; }
+    .level-REVIEW { background: #fef9c3; color: #854d0e; }
+    .level-HUMAN  { background: #fee2e2; color: #991b1b; }
+    .part-tag { background: var(--surface2); color: var(--muted); padding: 3px 8px;
+                border-radius: 4px; font-size: 11px; border: 1px solid var(--border); }
+
+    /* ── Reply section ── */
+    .reply-header { display: flex; align-items: center; gap: 8px; }
+    .reply-label { font-size: 12px; color: var(--muted); flex: 1; font-weight: 600; }
+    .reply-text { background: var(--surface2); border-radius: 8px; padding: 12px;
+                  font-size: 13px; line-height: 1.8; white-space: pre-wrap;
+                  min-height: 60px; max-height: 240px; overflow-y: auto;
+                  border: 1px solid var(--border); color: var(--text); }
+    .reply-text.streaming { border-color: var(--accent);
+                            box-shadow: 0 0 0 3px rgba(92,83,232,0.08); }
+    .cursor::after { content: '▋'; animation: blink 0.8s step-end infinite; color: var(--accent); }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── Retrieval panel ── */
+    .retrieval-panel { margin: 0 28px 20px; background: var(--surface);
+                       border: 1px solid var(--border); border-radius: var(--r);
+                       box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .retrieval-header { display: flex; align-items: center; gap: 12px;
+                        padding: 14px 18px; cursor: pointer; user-select: none; }
+    .retrieval-header h3 { font-size: 13px; font-weight: 600; color: var(--text); }
+    .ret-stat { background: var(--surface2); padding: 3px 8px; border-radius: 4px;
+                font-size: 11px; color: var(--muted); border: 1px solid var(--border); }
+    .expand-icon { margin-left: auto; color: var(--muted); font-size: 12px; }
+    .retrieval-body { display: none; padding: 0 18px 16px; }
+    .retrieval-body.open { display: block; }
+
+    /* ── Top-5 result cards ── */
+    .result-card { border: 1px solid var(--border); border-radius: 8px;
+                   margin-bottom: 10px; overflow: hidden; background: var(--surface); }
+    .result-card-header { display: flex; align-items: center; gap: 8px;
+                          padding: 10px 14px; background: var(--surface2); flex-wrap: wrap; }
+    .rank-badge { background: var(--accent); color: #fff; width: 22px; height: 22px;
+                  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                  font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .score-bar { flex: 1; max-width: 120px; }
+    .score-bar-bg { height: 6px; border-radius: 3px; background: var(--border); }
+    .score-bar-fill { height: 6px; border-radius: 3px; background: var(--accent); }
+    .meta-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .meta-tag { background: #fff; color: var(--muted); padding: 2px 7px;
+                border-radius: 4px; font-size: 10px; border: 1px solid var(--border); }
+    .result-card-body { display: grid; grid-template-columns: 1fr 1fr;
+                        gap: 0; border-top: 1px solid var(--border); }
+    @media (max-width: 700px) { .result-card-body { grid-template-columns: 1fr; } }
+    .result-col { padding: 10px 14px; }
+    .result-col + .result-col { border-left: 1px solid var(--border); }
+    .result-col-title { font-size: 10px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .result-jp { font-size: 12px; line-height: 1.7; max-height: 80px; overflow-y: auto;
+                 color: var(--text); }
+    .result-zh { font-size: 12px; color: #4a5568; line-height: 1.7; max-height: 80px; overflow-y: auto; }
+
+    /* ── Dashboard ── */
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr;
+                      gap: 20px; padding: 20px 28px; }
+    @media (max-width: 800px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    .chart-card { background: var(--surface); border: 1px solid var(--border);
+                  border-radius: var(--r); padding: 18px;
+                  box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .chart-title { font-size: 11px; color: var(--muted); font-weight: 700;
+                   text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; }
+    canvas { max-height: 220px; }
+
+    /* ── Status & Error ── */
+    .status-bar { font-size: 12px; color: var(--muted); min-height: 18px; }
+    .spinner { display: inline-block; width: 12px; height: 12px;
+               border: 2px solid var(--border); border-top-color: var(--accent);
+               border-radius: 50%; animation: spin 0.7s linear infinite;
+               vertical-align: middle; margin-right: 4px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box { display: none; background: #fff5f5; border: 1px solid #feb2b2;
+                 border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #c53030; }
+    .error-box.show { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:20px">🎮</span>
+  <h1>ぽちゃガチョ！客服 AI <span style="color:var(--muted);font-weight:400">v2</span></h1>
+  <div class="kb-status">
+    <span class="dot" id="kb-dot"></span>
+    <span id="kb-info">加载中...</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('process', this)">📧 处理邮件</button>
+  <button class="tab-btn" onclick="switchTab('dashboard', this)">📊 数据看板</button>
+</div>
+
+<!-- ══ 处理邮件 Tab ══ -->
+<div id="tab-process" class="tab-pane active">
+
+  <div class="process-grid">
+    <!-- 左栏：输入 + 邮件译文 -->
+    <div class="panel">
+      <div class="panel-title">📥 粘贴日文玩家邮件</div>
+      <textarea id="email-input" placeholder="将玩家发来的日文邮件正文粘贴到这里...（Ctrl+Enter 提交）"></textarea>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-primary" id="process-btn" onclick="processEmail()">处理邮件</button>
+        <div class="status-bar" id="status-bar"></div>
+      </div>
+      <div class="error-box" id="error-box"></div>
+
+      <!-- 邮件中文译文 -->
+      <div id="email-zh-block" style="display:none;flex-direction:column;gap:6px">
+        <div class="panel-title">🇨🇳 邮件中文译文</div>
+        <div class="translation-box" id="email-zh-text"></div>
+      </div>
+    </div>
+
+    <!-- 右栏：生成回复 -->
+    <div class="panel">
+      <div class="panel-title">📤 AI 生成回复</div>
+
+      <!-- 置信度卡片 -->
+      <div id="conf-card" style="display:none">
+        <div class="conf-row">
+          <div class="conf-score" id="conf-score" style="color:var(--auto)">—</div>
+          <div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <span class="level-badge" id="level-badge">—</span>
+              <span class="part-tag" id="part-tag"></span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="conf-desc"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中文摘要（REVIEW/HUMAN档） -->
+      <div id="summary-block" style="display:none;flex-direction:column;gap:6px">
+        <div class="panel-title">🇨🇳 中文分析摘要</div>
+        <div class="reply-text" id="summary-text"></div>
+      </div>
+
+      <!-- 日文回复 -->
+      <div id="reply-block" style="display:none;flex-direction:column;gap:6px">
+        <div class="reply-header">
+          <div class="reply-label" id="reply-label">🇯🇵 日文回复</div>
+          <button class="btn-copy" id="copy-btn" onclick="copyReply()" style="display:none">复制</button>
+        </div>
+        <div class="reply-text" id="reply-text"></div>
+      </div>
+
+      <!-- 中文回复译文 -->
+      <div id="reply-zh-block" style="display:none;flex-direction:column;gap:6px">
+        <div class="panel-title">🇨🇳 回复中文译文（参考）</div>
+        <div class="translation-box" id="reply-zh-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 检索来源面板 -->
+  <div class="retrieval-panel" id="retrieval-panel" style="display:none">
+    <div class="retrieval-header" onclick="toggleRetrieval()">
+      <h3>📚 检索来源</h3>
+      <span class="ret-stat" id="ret-partition"></span>
+      <span class="ret-stat" id="ret-count"></span>
+      <span class="ret-stat" id="ret-top"></span>
+      <span class="expand-icon" id="expand-icon">▼ 展开</span>
+    </div>
+    <div class="retrieval-body" id="retrieval-body"></div>
+  </div>
+
+</div>
+
+<!-- ══ 数据看板 Tab ══ -->
+<div id="tab-dashboard" class="tab-pane">
+  <div class="dashboard-grid">
+    <div class="chart-card">
+      <div class="chart-title">问询类型分布</div>
+      <canvas id="chart-inquiry"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">版本问题热点（Top 10 版本）</div>
+      <canvas id="chart-version"></canvas>
+    </div>
+    <div class="chart-card" style="grid-column: span 2">
+      <div class="chart-title">月度问询趋势</div>
+      <canvas id="chart-monthly" style="max-height:180px"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">设备/平台分布</div>
+      <canvas id="chart-env"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">知识库分区分布</div>
+      <canvas id="chart-partition"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Tab 切换 ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+}
+
+// ── Health check ──
+async function checkHealth() {
+  try {
+    const d = await fetch('/api/health').then(r => r.json());
+    const dot = document.getElementById('kb-dot');
+    const info = document.getElementById('kb-info');
+    if (d.kb_ready) {
+      dot.classList.add('ok');
+      info.textContent = `知识库就绪 · ${d.total} 条 · 分区: ${d.partitions.join(' / ')}`;
+    } else {
+      info.textContent = '知识库未加载，请运行 build_kb.py';
+    }
+  } catch(e) { document.getElementById('kb-info').textContent = '服务连接失败'; }
+}
+checkHealth();
+
+// ── Utilities ──
+function setStatus(msg) {
+  document.getElementById('status-bar').innerHTML = msg
+    ? `<span class="spinner"></span>${msg}` : '';
+}
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.textContent = msg; el.classList.add('show');
+}
+function hideAll() {
+  document.getElementById('error-box').classList.remove('show');
+  ['conf-card','summary-block','reply-block','reply-zh-block','email-zh-block']
+    .forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('retrieval-panel').style.display = 'none';
+  ['summary-text','reply-text','reply-zh-text','email-zh-text']
+    .forEach(id => { const el = document.getElementById(id);
+                     el.textContent = ''; el.classList.remove('streaming','cursor'); });
+  document.getElementById('copy-btn').style.display = 'none';
+}
+
+const LEVEL_COLOR = {AUTO:'#16a34a', REVIEW:'#ca8a04', HUMAN:'#dc2626'};
+const LEVEL_DESC  = {
+  AUTO:   '置信度高，可自动发出',
+  REVIEW: '置信度中等，请确认后发出',
+  HUMAN:  '置信度低或多轮，建议人工回复',
+};
+
+function renderMeta(meta) {
+  document.getElementById('conf-card').style.display = 'block';
+  const score = document.getElementById('conf-score');
+  score.textContent = meta.confidence + '%';
+  score.style.color = LEVEL_COLOR[meta.level] || '#64748b';
+  const badge = document.getElementById('level-badge');
+  badge.textContent = meta.level; badge.className = 'level-badge level-' + meta.level;
+  document.getElementById('part-tag').textContent = '分区: ' + meta.partition;
+  document.getElementById('conf-desc').textContent = LEVEL_DESC[meta.level] || '';
+
+  const rl = document.getElementById('reply-label');
+  rl.textContent = meta.level === 'AUTO' ? '🇯🇵 日文回复（自动档）' : '🇯🇵 日文回复草稿';
+
+  if (meta.level === 'AUTO') {
+    document.getElementById('copy-btn').style.display = 'inline-block';
+  }
+
+  if (meta.top_results && meta.top_results.length > 0) {
+    renderRetrieval(meta);
+  }
+}
+
+function renderRetrieval(meta) {
+  const panel = document.getElementById('retrieval-panel');
+  panel.style.display = 'block';
+  document.getElementById('ret-partition').textContent = '分区: ' + meta.partition;
+  document.getElementById('ret-count').textContent = '候选: ' + meta.candidates_count + ' 条';
+  document.getElementById('ret-top').textContent = '重排 Top-' + meta.top_results.length;
+
+  const body = document.getElementById('retrieval-body');
+  body.innerHTML = '';
+
+  meta.top_results.forEach(r => {
+    const pct = Math.round(r.score * 100);
+    const scoreColor = pct >= 80 ? '#16a34a' : pct >= 60 ? '#ca8a04' : '#dc2626';
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = `
+      <div class="result-card-header">
+        <div class="rank-badge">${r.rank}</div>
+        <div class="score-bar">
+          <div class="score-bar-bg">
+            <div class="score-bar-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:${scoreColor}">${pct}%</span>
+        <div class="meta-tags">
+          ${r.inquiry_type ? `<span class="meta-tag">📋 ${escHtml(r.inquiry_type)}</span>` : ''}
+          ${r.environment  ? `<span class="meta-tag">📱 ${escHtml(r.environment)}</span>` : ''}
+          ${r.app_version  ? `<span class="meta-tag">🔖 v${escHtml(r.app_version)}</span>` : ''}
+          ${r.date         ? `<span class="meta-tag">📅 ${escHtml(r.date)}</span>` : ''}
+        </div>
+      </div>
+      <div class="result-card-body">
+        <div class="result-col">
+          <div class="result-col-title">🇯🇵 原始提问</div>
+          <div class="result-jp">${escHtml(r.question_jp)}</div>
+          <div style="margin-top:8px" class="result-col-title">🇨🇳 提问译文</div>
+          <div class="result-zh">${escHtml(r.question_zh)}</div>
+        </div>
+        <div class="result-col">
+          <div class="result-col-title">🇯🇵 知识库回复</div>
+          <div class="result-jp">${escHtml(r.answer_jp)}</div>
+          <div style="margin-top:8px" class="result-col-title">🇨🇳 回复译文</div>
+          <div class="result-zh">${escHtml(r.answer_zh)}</div>
+        </div>
+      </div>`;
+    body.appendChild(card);
+  });
+}
+
+function toggleRetrieval() {
+  const body = document.getElementById('retrieval-body');
+  const icon = document.getElementById('expand-icon');
+  const open = body.classList.toggle('open');
+  icon.textContent = open ? '▲ 收起' : '▼ 展开';
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyReply() {
+  const text = document.getElementById('reply-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ 已复制'; setTimeout(() => btn.textContent = '复制', 2000);
+  });
+}
+
+// ── 主处理流程 ──
+async function processEmail() {
+  const emailText = document.getElementById('email-input').value.trim();
+  if (!emailText) { showError('请先粘贴邮件内容'); return; }
+
+  hideAll();
+  setStatus('翻译邮件 + 意图分类...');
+  document.getElementById('process-btn').disabled = true;
+
+  const resp = await fetch('/api/process', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email_text: emailText}),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({detail: resp.statusText}));
+    showError(err.detail || '请求失败');
+    setStatus(''); document.getElementById('process-btn').disabled = false; return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, {stream: true});
+    const lines = buf.split('\n'); buf = lines.pop();
+    let evType = null;
+    for (const line of lines) {
+      if (line.startsWith('event: ')) { evType = line.slice(7).trim(); continue; }
+      if (!line.startsWith('data: ')) continue;
+      let data; try { data = JSON.parse(line.slice(6)); } catch { continue; }
+
+      if (evType === 'translate') {
+        const block = document.getElementById('email-zh-block');
+        block.style.display = 'flex';
+        document.getElementById('email-zh-text').textContent = data.email_zh || '';
+        setStatus('意图分类...');
+
+      } else if (evType === 'intent') {
+        setStatus('向量+BM25 混合检索...');
+
+      } else if (evType === 'meta') {
+        setStatus('AI 生成回复...');
+        renderMeta(data);
+
+      } else if (evType === 'section') {
+        if (data.name === 'summary') {
+          const b = document.getElementById('summary-block');
+          b.style.display = 'flex';
+          document.getElementById('summary-text').classList.add('streaming', 'cursor');
+        } else if (data.name === 'reply') {
+          document.getElementById('summary-text').classList.remove('streaming','cursor');
+          const b = document.getElementById('reply-block');
+          b.style.display = 'flex';
+          document.getElementById('reply-text').classList.add('streaming', 'cursor');
+        }
+
+      } else if (evType === 'token') {
+        const el = document.getElementById(data.section === 'reply' ? 'reply-text' : 'summary-text');
+        el.textContent += data.text;
+
+      } else if (evType === 'reply_zh') {
+        document.getElementById('reply-text').classList.remove('streaming','cursor');
+        const b = document.getElementById('reply-zh-block');
+        b.style.display = 'flex';
+        document.getElementById('reply-zh-text').textContent = data.text || '';
+
+      } else if (evType === 'done') {
+        document.getElementById('summary-text').classList.remove('streaming','cursor');
+        document.getElementById('reply-text').classList.remove('streaming','cursor');
+        setStatus('');
+
+      } else if (evType === 'error') {
+        const msg = data.message || '处理出错';
+        if (msg.includes('402') || msg.includes('Insufficient Balance')) {
+          showError('⚠️ DeepSeek 余额不足（402），请前往 platform.deepseek.com 充值。');
+        } else { showError(msg); }
+        setStatus('');
+      }
+      evType = null;
+    }
+  }
+  document.getElementById('process-btn').disabled = false;
+}
+
+document.getElementById('email-input').addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') processEmail();
+});
+
+// ── 数据看板 ──
+let chartsBuilt = false;
+async function loadDashboard() {
+  if (chartsBuilt) return;
+  try {
+    const data = await fetch('/api/analytics').then(r => r.json());
+    buildCharts(data);
+    chartsBuilt = true;
+  } catch(e) {
+    console.error('看板数据加载失败:', e);
+  }
+}
+
+const CHART_COLORS = [
+  '#5c53e8','#16a34a','#ca8a04','#dc2626','#2563eb',
+  '#7c3aed','#ea580c','#0891b2','#db2777','#64748b',
+];
+
+function buildCharts(d) {
+  const lightScales = {
+    x: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#f1f5f9' } },
+    y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#f1f5f9' } },
+  };
+  const legendOpts = { labels: { color: '#4a5568', font: {size:11} } };
+
+  // 问询类型（Doughnut）
+  const inqKeys = Object.keys(d.inquiry_type_dist || {}).slice(0, 8);
+  new Chart(document.getElementById('chart-inquiry'), {
+    type: 'doughnut',
+    data: { labels: inqKeys, datasets: [{
+      data: inqKeys.map(k => d.inquiry_type_dist[k]),
+      backgroundColor: CHART_COLORS,
+      borderWidth: 2,
+      borderColor: '#fff',
+    }]},
+    options: { plugins: { legend: legendOpts } },
+  });
+
+  // 版本热点（横向 Bar）
+  const verKeys = Object.keys(d.version_dist || {}).slice(0, 10);
+  new Chart(document.getElementById('chart-version'), {
+    type: 'bar',
+    data: { labels: verKeys, datasets: [{
+      label: '问题数',
+      data: verKeys.map(k => d.version_dist[k]),
+      backgroundColor: '#5c53e855',
+      borderColor: '#5c53e8',
+      borderWidth: 1,
+    }]},
+    options: { indexAxis: 'y', plugins: { legend: legendOpts }, scales: lightScales },
+  });
+
+  // 月度趋势（Line）
+  const months = Object.keys(d.date_monthly || {}).filter(k => k !== '不明');
+  new Chart(document.getElementById('chart-monthly'), {
+    type: 'line',
+    data: { labels: months, datasets: [{
+      label: '月度问询量',
+      data: months.map(k => d.date_monthly[k]),
+      borderColor: '#5c53e8',
+      backgroundColor: '#5c53e812',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 3,
+      pointBackgroundColor: '#5c53e8',
+    }]},
+    options: { plugins: { legend: legendOpts }, scales: lightScales },
+  });
+
+  // 设备分布（Bar）
+  const envKeys = Object.keys(d.environment_dist || {}).slice(0, 8);
+  new Chart(document.getElementById('chart-env'), {
+    type: 'bar',
+    data: { labels: envKeys, datasets: [{
+      label: '数量',
+      data: envKeys.map(k => d.environment_dist[k]),
+      backgroundColor: CHART_COLORS,
+      borderWidth: 0,
+    }]},
+    options: { plugins: { legend: legendOpts }, scales: lightScales },
+  });
+
+  // 分区分布（Doughnut）
+  const partKeys = Object.keys(d.by_partition || {});
+  new Chart(document.getElementById('chart-partition'), {
+    type: 'doughnut',
+    data: { labels: partKeys, datasets: [{
+      data: partKeys.map(k => d.by_partition[k]),
+      backgroundColor: CHART_COLORS,
+      borderWidth: 2,
+      borderColor: '#fff',
+    }]},
+    options: { plugins: { legend: legendOpts } },
+  });
+}
+</script>
+
+</body>
+</html>
