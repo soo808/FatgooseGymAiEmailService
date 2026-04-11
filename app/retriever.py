@@ -2,31 +2,21 @@
 retriever.py — HybridRetriever
   - 加载所有分区（FAISS + BM25）
   - 向量检索 + BM25 双路，RRF 融合
-  - 元数据 Boost 重排，返回 Top-5
+  - per-partition 配置驱动权重 / 阈值
+  - reload_partition() 热更新，reload_config() 热更新配置
 """
 
 import json
 import pickle
-import re
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 
-
-def tokenize_jp(text: str) -> list[str]:
-    """与 build_kb.py 保持相同的 bigram 分词"""
-    text = re.sub(r'\s+', '', text)
-    chars = list(text)
-    bigrams = [chars[i] + chars[i+1] for i in range(len(chars) - 1)]
-    return chars + bigrams
+from app.indexer import get_model, tokenize_jp
 
 
 def rrf_fusion(result_lists: list[list[int]], k: int = 60) -> list[tuple[int, float]]:
-    """
-    Reciprocal Rank Fusion
-    result_lists: 每路检索返回的 qa_pair index 列表（已按相关度排序）
-    """
     scores: dict[int, float] = {}
     for results in result_lists:
         for rank, idx in enumerate(results):
@@ -50,7 +40,6 @@ class PartitionIndex:
             self.bm25: BM25Okapi = pickle.load(f)
 
     def vector_search(self, query_vec: np.ndarray, top_k: int = 20) -> list[tuple[int, float]]:
-        """返回 [(local_index, cosine_score), ...]"""
         scores, indices = self.faiss_index.search(query_vec, top_k)
         return [
             (int(idx), float(score))
@@ -59,7 +48,6 @@ class PartitionIndex:
         ]
 
     def bm25_search(self, query_tokens: list[str], top_k: int = 20) -> list[tuple[int, float]]:
-        """返回 [(local_index, bm25_score), ...]"""
         scores = self.bm25.get_scores(query_tokens)
         top_indices = np.argsort(scores)[::-1][:top_k]
         return [(int(i), float(scores[i])) for i in top_indices if scores[i] > 0]
@@ -67,8 +55,6 @@ class PartitionIndex:
 
 class HybridRetriever:
     def __init__(self, kb_dir: Optional[str] = None):
-        from sentence_transformers import SentenceTransformer
-
         if kb_dir is None:
             kb_dir = Path(__file__).parent.parent / "kb"
         self.kb_dir = Path(kb_dir)
@@ -79,6 +65,8 @@ class HybridRetriever:
                 "分区知识库不存在，请先运行: python scripts/build_kb.py --input <xlsx>"
             )
 
+        self.config = self._load_config()
+
         self.partitions: dict[str, PartitionIndex] = {}
         for d in parts_dir.iterdir():
             if d.is_dir() and (d / "qa_pairs.json").exists():
@@ -88,38 +76,52 @@ class HybridRetriever:
         if not self.partitions:
             raise FileNotFoundError("partitions/ 下未找到有效分区，请重新运行 build_kb.py")
 
-        self.model = SentenceTransformer('intfloat/multilingual-e5-base')
+        self.model = get_model()
         total = sum(len(p.qa_pairs) for p in self.partitions.values())
         print(f"[Retriever] 全部加载完毕 — {len(self.partitions)} 分区 · {total} 条")
+
+    def _load_config(self) -> dict:
+        cfg_path = self.kb_dir / "retrieval_config.json"
+        if cfg_path.exists():
+            with open(cfg_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return {}
+
+    def reload_config(self) -> None:
+        """PUT /api/kb/config 后调用，热更新权重/阈值"""
+        self.config = self._load_config()
+
+    def reload_partition(self, name: str) -> None:
+        """重建索引完成后调用，热加载指定分区"""
+        part_dir = self.kb_dir / "partitions" / name
+        if part_dir.exists() and (part_dir / "qa_pairs.json").exists():
+            self.partitions[name] = PartitionIndex(part_dir)
+            print(f"[Retriever] 热更新分区 [{name}] — {len(self.partitions[name].qa_pairs)} 条")
+
+    def _get_part_cfg(self, name: str) -> dict:
+        return self.config.get("partitions", {}).get(name, {})
 
     def search(
         self,
         query: str,
         partition: Optional[str] = None,
-        top_k: int = 5,
-        candidate_k: int = 20,
+        top_k: Optional[int] = None,
+        candidate_k: Optional[int] = None,
     ) -> dict:
         """
         返回:
         {
             "partition_used": "不具合",
             "candidates_count": 40,
-            "top_results": [
-                {
-                    "rank": 1,
-                    "final_score": 0.923,
-                    "vec_score": 0.91,
-                    "rrf_score": 0.031,
-                    "qa": { ...qa字段... }
-                },
-                ...
-            ]
+            "top_results": [{"rank":1, "final_score":0.923, "vec_score":0.91, "rrf_score":0.031, "qa":{...}}, ...]
         }
         """
-        # 确定目标分区（找不到则用全库合并）
+        cfg = self._get_part_cfg(partition or "")
+        _top_k = top_k or cfg.get("top_k", 5)
+        _candidate_k = candidate_k or cfg.get("candidate_k", 20)
+
         target = self.partitions.get(partition) if partition else None
 
-        # 编码查询向量
         query_vec = self.model.encode(
             ["query: " + query],
             normalize_embeddings=True,
@@ -128,22 +130,20 @@ class HybridRetriever:
         query_tokens = tokenize_jp(query)
 
         if target:
-            results = self._search_partition(target, query_vec, query_tokens, candidate_k)
+            results = self._search_partition(target, query_vec, query_tokens, _candidate_k)
             source_name = target.name
-            raw_candidate_count = min(candidate_k * 2, len(target.qa_pairs))
+            raw_candidate_count = min(_candidate_k * 2, len(target.qa_pairs))
         else:
-            # 跨分区搜索：每个分区取 candidate_k/2 候选后合并
             merged: list[dict] = []
             for name, part in self.partitions.items():
-                partial = self._search_partition(part, query_vec, query_tokens, candidate_k // 2)
+                partial = self._search_partition(part, query_vec, query_tokens, _candidate_k // 2)
                 merged.extend(partial)
             merged.sort(key=lambda x: x["final_score"], reverse=True)
             results = merged
             source_name = "全分区"
             raw_candidate_count = sum(len(p.qa_pairs) for p in self.partitions.values())
 
-        # 取 Top-K，补充 rank 编号
-        top = results[:top_k]
+        top = results[:_top_k]
         for rank, item in enumerate(top, 1):
             item["rank"] = rank
 
@@ -160,26 +160,24 @@ class HybridRetriever:
         query_tokens: list[str],
         candidate_k: int,
     ) -> list[dict]:
-        """对单个分区做向量+BM25双路检索 → RRF → 重排"""
+        cfg = self._get_part_cfg(part.name)
+        vec_w = cfg.get("vec_weight", 0.70)
+        rrf_w = cfg.get("rrf_weight", 0.30)
+
         vec_results = part.vector_search(query_vec, top_k=candidate_k)
         bm25_results = part.bm25_search(query_tokens, top_k=candidate_k)
 
-        # 构建分数映射
         vec_score_map = {idx: score for idx, score in vec_results}
         bm25_raw = {idx: score for idx, score in bm25_results}
-        # 归一化 BM25（/max）
         bm25_max = max(bm25_raw.values(), default=1.0)
         bm25_norm = {idx: s / bm25_max for idx, s in bm25_raw.items()}
 
-        # RRF
         rrf = rrf_fusion(
             [[i for i, _ in vec_results], [i for i, _ in bm25_results]]
         )
-        # 归一化 RRF（/max）
         rrf_max = rrf[0][1] if rrf else 1.0
         rrf_norm = {idx: s / rrf_max for idx, s in rrf[:candidate_k * 2]}
 
-        # 候选集：两路并集
         candidates = set(vec_score_map.keys()) | set(bm25_raw.keys())
 
         items = []
@@ -189,9 +187,7 @@ class HybridRetriever:
             qa = part.qa_pairs[idx]
             vs = vec_score_map.get(idx, 0.0)
             rs = rrf_norm.get(idx, 0.0)
-
-            # 最终得分：向量权重 70% + RRF 权重 30%
-            score = 0.7 * vs + 0.3 * rs
+            score = vec_w * vs + rrf_w * rs
             items.append({
                 "rank": 0,
                 "final_score": round(score, 4),
@@ -208,12 +204,15 @@ class HybridRetriever:
         quoted = [l for l in email_text.split('\n') if l.startswith('>')]
         return 2 if quoted else 1
 
-    @staticmethod
-    def route(confidence: float, turns: int) -> str:
+    def route(self, confidence: float, turns: int, partition: str = "") -> str:
+        """per-partition 路由阈值（从 retrieval_config.json 读取）"""
+        cfg = self._get_part_cfg(partition)
+        auto_t = cfg.get("auto_threshold", 0.90)
+        review_t = cfg.get("review_threshold", 0.70)
         if turns > 1:
             return "HUMAN"
-        if confidence >= 0.90:
+        if confidence >= auto_t:
             return "AUTO"
-        if confidence >= 0.70:
+        if confidence >= review_t:
             return "REVIEW"
         return "HUMAN"

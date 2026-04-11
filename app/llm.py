@@ -33,13 +33,17 @@ def get_client() -> AsyncOpenAI:
 GAME = "ぽちゃガチョ！"
 
 
-async def _stream(messages: list[dict], model: str = "deepseek-chat") -> AsyncGenerator[str, None]:
+async def _stream(
+    messages: list[dict],
+    model: str = "deepseek-chat",
+    temperature: float = 0.3,
+) -> AsyncGenerator[str, None]:
     client = get_client()
     stream = await client.chat.completions.create(
         model=model,
         messages=messages,
         stream=True,
-        temperature=0.3,
+        temperature=temperature,
         max_tokens=1024,
     )
     async for chunk in stream:
@@ -69,7 +73,10 @@ async def generate_auto_reply(
                 "请参考以下历史参考案例（按相关度排序），针对玩家当前问题生成一封简洁、礼貌的日文回复邮件。\n"
                 "要求：1. 开头「いつもご利用いただきありがとうございます。」\n"
                 "2. 针对本次问题，不要照抄 3. 结尾「今後ともよろしくお願いいたします。」\n"
-                "4. 只输出邮件正文"
+                "4. 只输出邮件正文\n\n"
+                "⚠️ 重要：回复内容只能基于上述参考案例中的实际信息。\n"
+                "禁止添加参考案例中未出现的功能说明、版本说明、补偿政策或具体数值。\n"
+                "如有不确定内容请说「確認後にご連絡いたします」，不得自行编造。"
             ),
         },
         {
@@ -77,7 +84,7 @@ async def generate_auto_reply(
             "content": f"【玩家问题】\n{question_jp}\n\n【参考案例（Top-3）】{refs}",
         },
     ]
-    async for token in _stream(messages):
+    async for token in _stream(messages, temperature=0.1):
         yield token
 
 
@@ -111,7 +118,10 @@ async def generate_review_draft(
                 "第一部分 — 中文摘要（3-5句）：玩家反馈了什么、情绪、核心诉求\n"
                 "[SUMMARY_END]\n"
                 "第二部分 — 日文回复草稿：参考历史案例语气，结构完整\n"
-                "只输出这两部分，无其他说明"
+                "只输出这两部分，无其他说明\n\n"
+                "⚠️ 重要：日文草稿内容只能基于上述参考案例中的实际信息。\n"
+                "禁止添加参考案例中未出现的功能说明、版本说明、补偿政策或具体数值。\n"
+                "如有不确定内容请说「確認後にご連絡いたします」，不得自行编造。"
             ),
         },
         {
@@ -119,7 +129,7 @@ async def generate_review_draft(
             "content": f"【玩家原文（日文）】\n{question_jp}\n\n【参考案例（Top-3）】{refs}",
         },
     ]
-    async for token in _stream(messages):
+    async for token in _stream(messages, temperature=0.2):
         yield token
 
 

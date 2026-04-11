@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ぽちゃガチョ！客服 AI v2</title>
+  <title>ぽちゃガチョ！客服 AI v3</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,6 +70,12 @@
                    transition: opacity 0.15s; }
     .btn-primary:hover { opacity: 0.88; }
     .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+                     border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;
+                  border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
+    .btn-danger:hover { background: #fecaca; }
     .btn-copy { background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
                 border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
     .btn-copy:hover { background: var(--border); }
@@ -161,13 +167,120 @@
     .error-box { display: none; background: #fff5f5; border: 1px solid #feb2b2;
                  border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #c53030; }
     .error-box.show { display: block; }
+
+    /* ══ 知识库管理 Tab ══ */
+    .kb-toolbar { display: flex; align-items: center; gap: 8px; padding: 14px 28px;
+                  flex-wrap: wrap; border-bottom: 1px solid var(--border);
+                  background: var(--surface); }
+    .part-filter-btn { padding: 5px 14px; border-radius: 20px; font-size: 12px; cursor: pointer;
+                       border: 1px solid var(--border); background: var(--surface2); color: var(--muted); }
+    .part-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .part-filter-btn:hover:not(.active) { background: var(--border); }
+    .kb-total-badge { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+    .kb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+               padding: 20px 28px; }
+    @media (max-width: 860px) { .kb-grid { grid-template-columns: 1fr; } }
+
+    .kb-card { background: var(--surface); border: 1px solid var(--border);
+               border-radius: var(--r); padding: 14px;
+               box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+               display: flex; flex-direction: column; gap: 8px; }
+    .kb-card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .kb-tag { padding: 2px 7px; border-radius: 4px; font-size: 10px;
+              border: 1px solid var(--border); color: var(--muted); background: var(--surface2); }
+    .kb-tag.part { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
+    .kb-tag.warn { background: #fef9c3; border-color: #fde047; color: #854d0e; }
+    .kb-card-q { font-size: 13px; color: var(--text); line-height: 1.6;
+                 max-height: 60px; overflow: hidden; display: -webkit-box;
+                 -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+    .kb-card-footer { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .kb-card-meta { font-size: 10px; color: var(--muted); flex: 1; }
+    .kb-card-actions { display: flex; gap: 4px; }
+    .btn-sm { padding: 3px 10px; font-size: 11px; border-radius: 5px; cursor: pointer; border: 1px solid; }
+    .btn-sm-edit { background: var(--surface2); color: var(--accent); border-color: #c4b5fd; }
+    .btn-sm-edit:hover { background: #ede9fe; }
+    .btn-sm-del  { background: #fff5f5; color: #c53030; border-color: #fecaca; }
+    .btn-sm-del:hover { background: #fee2e2; }
+
+    /* Pagination */
+    .kb-pagination { display: flex; align-items: center; gap: 4px; padding: 12px 28px 20px;
+                     flex-wrap: wrap; }
+    .page-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border);
+                background: var(--surface); color: var(--muted); font-size: 12px; cursor: pointer;
+                display: flex; align-items: center; justify-content: center; }
+    .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .page-btn:hover:not(.active):not(:disabled) { background: var(--surface2); }
+    .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .page-ellipsis { width: 30px; height: 30px; display: flex; align-items: center;
+                     justify-content: center; font-size: 12px; color: var(--muted); }
+    .jump-form { display: flex; align-items: center; gap: 6px; margin-left: 12px; font-size: 12px; color: var(--muted); }
+    .jump-form input { width: 48px; padding: 4px 8px; border: 1px solid var(--border);
+                       border-radius: 6px; font-size: 12px; text-align: center; }
+
+    /* Retrieval Config Panel */
+    .config-section { margin: 0 28px 28px; background: var(--surface); border: 1px solid var(--border);
+                      border-radius: var(--r); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .config-section-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+                              cursor: pointer; user-select: none; }
+    .config-section-header h3 { font-size: 13px; font-weight: 600; }
+    .config-body { display: none; padding: 0 18px 18px; }
+    .config-body.open { display: block; }
+    .config-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+    .config-label { font-size: 12px; color: var(--muted); width: 90px; flex-shrink: 0; }
+    .slider-wrap { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px; }
+    input[type=range] { flex: 1; accent-color: var(--accent); }
+    .slider-val { font-size: 13px; font-weight: 600; color: var(--accent); width: 36px; text-align: right; }
+    .config-num { width: 70px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
+                  font-size: 12px; }
+
+    /* Progress bar */
+    .progress-wrap { background: var(--surface2); border-radius: 4px; height: 8px; margin: 8px 0; }
+    .progress-bar  { height: 8px; border-radius: 4px; background: var(--accent);
+                     transition: width 0.3s; width: 0%; }
+    .progress-msg { font-size: 12px; color: var(--muted); }
+
+    /* ── Modal overlay ── */
+    .modal-overlay { display: none; position: fixed; inset: 0;
+                     background: rgba(0,0,0,0.4); z-index: 100;
+                     align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--r);
+             box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+             width: min(92vw, 820px); max-height: 92vh;
+             display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { display: flex; align-items: center; gap: 12px;
+                    padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { font-size: 15px; font-weight: 600; flex: 1; }
+    .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); }
+    .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border);
+                    display: flex; justify-content: flex-end; gap: 10px; }
+    .modal-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .modal-grid-2 { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+                  letter-spacing: 0.05em; }
+    .form-input { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+                  font-size: 13px; font-family: inherit; background: var(--surface2); }
+    .form-input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+    .form-textarea { min-height: 100px; resize: vertical; }
+    .form-input:read-only { opacity: 0.7; cursor: default; }
+    .form-select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+                   font-size: 13px; background: var(--surface2); }
+    .conditional-field { display: none; }
+    .conditional-field.show { display: block; }
+
+    /* Confirm box inside modal */
+    .confirm-box { background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px;
+                   padding: 12px 16px; font-size: 13px; color: #991b1b; margin-top: 12px; }
   </style>
 </head>
 <body>
 
 <header>
   <span style="font-size:20px">🎮</span>
-  <h1>ぽちゃガチョ！客服 AI <span style="color:var(--muted);font-weight:400">v2</span></h1>
+  <h1>ぽちゃガチョ！客服 AI <span style="color:var(--muted);font-weight:400">v3</span></h1>
   <div class="kb-status">
     <span class="dot" id="kb-dot"></span>
     <span id="kb-info">加载中...</span>
@@ -177,13 +290,13 @@
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('process', this)">📧 处理邮件</button>
   <button class="tab-btn" onclick="switchTab('dashboard', this)">📊 数据看板</button>
+  <button class="tab-btn" onclick="switchTab('kb', this)">📚 知识库管理</button>
 </div>
 
 <!-- ══ 处理邮件 Tab ══ -->
 <div id="tab-process" class="tab-pane active">
-
   <div class="process-grid">
-    <!-- 左栏：输入 + 邮件译文 -->
+    <!-- 左栏 -->
     <div class="panel">
       <div class="panel-title">📥 粘贴日文玩家邮件</div>
       <textarea id="email-input" placeholder="将玩家发来的日文邮件正文粘贴到这里...（Ctrl+Enter 提交）"></textarea>
@@ -192,19 +305,14 @@
         <div class="status-bar" id="status-bar"></div>
       </div>
       <div class="error-box" id="error-box"></div>
-
-      <!-- 邮件中文译文 -->
       <div id="email-zh-block" style="display:none;flex-direction:column;gap:6px">
         <div class="panel-title">🇨🇳 邮件中文译文</div>
         <div class="translation-box" id="email-zh-text"></div>
       </div>
     </div>
-
-    <!-- 右栏：生成回复 -->
+    <!-- 右栏 -->
     <div class="panel">
       <div class="panel-title">📤 AI 生成回复</div>
-
-      <!-- 置信度卡片 -->
       <div id="conf-card" style="display:none">
         <div class="conf-row">
           <div class="conf-score" id="conf-score" style="color:var(--auto)">—</div>
@@ -217,14 +325,10 @@
           </div>
         </div>
       </div>
-
-      <!-- 中文摘要（REVIEW/HUMAN档） -->
       <div id="summary-block" style="display:none;flex-direction:column;gap:6px">
         <div class="panel-title">🇨🇳 中文分析摘要</div>
         <div class="reply-text" id="summary-text"></div>
       </div>
-
-      <!-- 日文回复 -->
       <div id="reply-block" style="display:none;flex-direction:column;gap:6px">
         <div class="reply-header">
           <div class="reply-label" id="reply-label">🇯🇵 日文回复</div>
@@ -232,8 +336,6 @@
         </div>
         <div class="reply-text" id="reply-text"></div>
       </div>
-
-      <!-- 中文回复译文 -->
       <div id="reply-zh-block" style="display:none;flex-direction:column;gap:6px">
         <div class="panel-title">🇨🇳 回复中文译文（参考）</div>
         <div class="translation-box" id="reply-zh-text"></div>
@@ -241,7 +343,6 @@
     </div>
   </div>
 
-  <!-- 检索来源面板 -->
   <div class="retrieval-panel" id="retrieval-panel" style="display:none">
     <div class="retrieval-header" onclick="toggleRetrieval()">
       <h3>📚 检索来源</h3>
@@ -252,7 +353,6 @@
     </div>
     <div class="retrieval-body" id="retrieval-body"></div>
   </div>
-
 </div>
 
 <!-- ══ 数据看板 Tab ══ -->
@@ -278,6 +378,249 @@
       <div class="chart-title">知识库分区分布</div>
       <canvas id="chart-partition"></canvas>
     </div>
+    <!-- 检索质量指标 -->
+    <div class="chart-card">
+      <div class="chart-title">置信度分布（按分区）</div>
+      <canvas id="chart-conf-dist"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">路由等级分布（实时处理）</div>
+      <canvas id="chart-level-dist"></canvas>
+    </div>
+    <div class="chart-card" style="grid-column: span 2">
+      <div class="chart-title">每日处理量（最近 30 天）</div>
+      <canvas id="chart-daily" style="max-height:180px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 知识库管理 Tab ══ -->
+<div id="tab-kb" class="tab-pane">
+  <!-- 工具栏：分区筛选 + 导入按钮 -->
+  <div class="kb-toolbar">
+    <div id="partition-filter-btns" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="part-filter-btn active" onclick="filterPartition('全部', this)">全部</button>
+    </div>
+    <div class="kb-total-badge" id="kb-total-badge"></div>
+    <button class="btn-primary" style="padding:6px 16px;font-size:12px"
+            onclick="openImportModal()">⬆ 导入文件</button>
+  </div>
+
+  <!-- 知识库卡片 grid -->
+  <div class="kb-grid" id="kb-grid">
+    <div style="color:var(--muted);font-size:13px;grid-column:1/-1;padding:20px 0">加载中...</div>
+  </div>
+
+  <!-- 分页 -->
+  <div class="kb-pagination" id="kb-pagination"></div>
+
+  <!-- 检索参数配置（折叠） -->
+  <div class="config-section">
+    <div class="config-section-header" onclick="toggleConfig()">
+      <h3>⚙️ 检索参数配置</h3>
+      <span style="font-size:11px;color:var(--muted)">per-partition 向量/BM25 权重 · Top-K · 路由阈值</span>
+      <span class="expand-icon" id="config-expand-icon" style="margin-left:auto;color:var(--muted);font-size:12px">▼ 展开</span>
+    </div>
+    <div class="config-body" id="config-body">
+      <div class="config-row" style="margin-bottom:12px">
+        <div class="config-label">选择分区</div>
+        <select class="form-select" id="cfg-partition" onchange="loadPartitionConfig()" style="width:160px"></select>
+      </div>
+      <div class="config-row">
+        <div class="config-label">向量权重</div>
+        <div class="slider-wrap">
+          <input type="range" id="cfg-vec" min="0" max="1" step="0.01" value="0.70"
+                 oninput="onVecSlide()">
+          <span class="slider-val" id="cfg-vec-val">0.70</span>
+          <span style="font-size:11px;color:var(--muted)">BM25: <b id="cfg-rrf-val">0.30</b></span>
+        </div>
+      </div>
+      <div class="config-row">
+        <div class="config-label">候选数 (K)</div>
+        <input class="config-num form-input" type="number" id="cfg-cand" min="5" max="100" value="20">
+        <div class="config-label" style="margin-left:20px">Top-K</div>
+        <input class="config-num form-input" type="number" id="cfg-topk" min="1" max="20" value="5">
+      </div>
+      <div class="config-row">
+        <div class="config-label">AUTO 阈值</div>
+        <div class="slider-wrap">
+          <input type="range" id="cfg-auto" min="0.5" max="1.0" step="0.01" value="0.90"
+                 oninput="document.getElementById('cfg-auto-val').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slider-val" id="cfg-auto-val">0.90</span>
+        </div>
+      </div>
+      <div class="config-row">
+        <div class="config-label">REVIEW 阈值</div>
+        <div class="slider-wrap">
+          <input type="range" id="cfg-review" min="0.3" max="0.95" step="0.01" value="0.70"
+                 oninput="document.getElementById('cfg-review-val').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slider-val" id="cfg-review-val">0.70</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn-primary" style="font-size:12px;padding:7px 18px" onclick="savePartitionConfig()">保存配置</button>
+        <button class="btn-secondary" style="font-size:12px;padding:7px 14px" onclick="loadPartitionConfig()">重置</button>
+        <span id="cfg-save-msg" style="font-size:12px;color:var(--auto);align-self:center"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 编辑/查看 模态框 ══ -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="edit-modal-title">查看条目</h2>
+      <button class="btn-secondary" id="edit-toggle-btn" style="font-size:12px;padding:5px 12px"
+              onclick="toggleEditMode()">编辑</button>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid-2">
+        <div class="form-group">
+          <div class="form-label">🇯🇵 问题原文</div>
+          <textarea class="form-input form-textarea" id="edit-q-jp" readonly style="height:120px"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">🇨🇳 问题译文</div>
+          <textarea class="form-input form-textarea" id="edit-q-zh" readonly style="height:120px"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">🇯🇵 回复原文</div>
+          <textarea class="form-input form-textarea" id="edit-a-jp" readonly style="height:120px"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">🇨🇳 回复译文</div>
+          <textarea class="form-input form-textarea" id="edit-a-zh" readonly style="height:120px"></textarea>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="modal-grid-2">
+        <div class="form-group">
+          <div class="form-label">问询类型</div>
+          <input class="form-input" id="edit-inq" readonly>
+        </div>
+        <div class="form-group">
+          <div class="form-label">使用环境</div>
+          <input class="form-input" id="edit-env" readonly>
+        </div>
+        <div class="form-group">
+          <div class="form-label">App 版本</div>
+          <input class="form-input" id="edit-ver" readonly>
+        </div>
+        <div class="form-group">
+          <div class="form-label">日期</div>
+          <input class="form-input" id="edit-date" readonly>
+        </div>
+      </div>
+      <!-- 重建进度 -->
+      <div id="edit-rebuild-wrap" style="display:none;margin-top:14px">
+        <div class="progress-msg" id="edit-rebuild-msg">正在重建索引...</div>
+        <div class="progress-wrap"><div class="progress-bar" id="edit-progress-bar"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeEditModal()">取消</button>
+      <button class="btn-primary" id="save-entry-btn" style="display:none" onclick="saveEntry()">保存 + 重建索引</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 删除确认 模态框 ══ -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2>删除条目</h2>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:14px">确认删除以下条目？此操作将立即重建分区索引。</div>
+      <div class="confirm-box" id="delete-preview"></div>
+      <div id="delete-rebuild-wrap" style="display:none;margin-top:14px">
+        <div class="progress-msg" id="delete-rebuild-msg">正在重建索引...</div>
+        <div class="progress-wrap"><div class="progress-bar" id="delete-progress-bar"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeDeleteModal()">取消</button>
+      <button class="btn-danger" id="confirm-delete-btn" onclick="confirmDelete()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 文件导入 模态框 ══ -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h2>导入知识库文件</h2>
+      <button class="modal-close" onclick="closeImportModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:12px">
+        <div class="form-label">文件（Excel / docx）</div>
+        <input type="file" id="import-file" accept=".xlsx,.xls,.docx"
+               class="form-input" style="padding:5px">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <div class="form-label">目标分区名（可新建）</div>
+        <input list="partition-list" class="form-input" id="import-partition" placeholder="如: 游戏政策">
+        <datalist id="partition-list"></datalist>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <div class="form-label">分区描述（新建分区时使用）</div>
+        <input class="form-input" id="import-desc" placeholder="如: ゲームのポリシー・利用規約">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <div class="form-label">解析模式</div>
+        <select class="form-select" id="import-mode" onchange="onImportModeChange()" style="width:100%">
+          <option value="qa_excel">Excel — Q/A 双列</option>
+          <option value="paragraph_excel">Excel — 单列段落（每行一条）</option>
+          <option value="docx_qa">docx — Q/A 标记行（Q: / A:）</option>
+          <option value="docx_paragraphs">docx — Heading/段落切分</option>
+        </select>
+      </div>
+      <!-- 条件字段 -->
+      <div id="field-qa-excel" class="conditional-field show">
+        <div class="modal-grid-2">
+          <div class="form-group">
+            <div class="form-label">Q 列名</div>
+            <input class="form-input" id="import-qcol" value="質問">
+          </div>
+          <div class="form-group">
+            <div class="form-label">A 列名</div>
+            <input class="form-input" id="import-acol" value="回答">
+          </div>
+        </div>
+      </div>
+      <div id="field-paragraph-excel" class="conditional-field">
+        <div class="form-group">
+          <div class="form-label">文本列名</div>
+          <input class="form-input" id="import-textcol" value="本文">
+        </div>
+      </div>
+      <div id="field-docx-qa" class="conditional-field">
+        <div class="modal-grid-2">
+          <div class="form-group">
+            <div class="form-label">Q 标记（行首）</div>
+            <input class="form-input" id="import-qmarker" value="Q:">
+          </div>
+          <div class="form-group">
+            <div class="form-label">A 标记（行首）</div>
+            <input class="form-input" id="import-amarker" value="A:">
+          </div>
+        </div>
+      </div>
+      <!-- 导入进度 -->
+      <div id="import-progress-wrap" style="display:none;margin-top:14px">
+        <div class="progress-msg" id="import-progress-msg">准备中...</div>
+        <div class="progress-wrap"><div class="progress-bar" id="import-progress-bar"></div></div>
+      </div>
+      <div id="import-result-msg" style="display:none;margin-top:10px;font-size:13px;color:var(--auto)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeImportModal()">取消</button>
+      <button class="btn-primary" id="import-submit-btn" onclick="submitImport()">开始导入</button>
+    </div>
   </div>
 </div>
 
@@ -289,6 +632,7 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
   if (name === 'dashboard') loadDashboard();
+  if (name === 'kb') loadKBTab();
 }
 
 // ── Health check ──
@@ -343,17 +687,10 @@ function renderMeta(meta) {
   badge.textContent = meta.level; badge.className = 'level-badge level-' + meta.level;
   document.getElementById('part-tag').textContent = '分区: ' + meta.partition;
   document.getElementById('conf-desc').textContent = LEVEL_DESC[meta.level] || '';
-
-  const rl = document.getElementById('reply-label');
-  rl.textContent = meta.level === 'AUTO' ? '🇯🇵 日文回复（自动档）' : '🇯🇵 日文回复草稿';
-
-  if (meta.level === 'AUTO') {
-    document.getElementById('copy-btn').style.display = 'inline-block';
-  }
-
-  if (meta.top_results && meta.top_results.length > 0) {
-    renderRetrieval(meta);
-  }
+  document.getElementById('reply-label').textContent =
+    meta.level === 'AUTO' ? '🇯🇵 日文回复（自动档）' : '🇯🇵 日文回复草稿';
+  if (meta.level === 'AUTO') document.getElementById('copy-btn').style.display = 'inline-block';
+  if (meta.top_results && meta.top_results.length > 0) renderRetrieval(meta);
 }
 
 function renderRetrieval(meta) {
@@ -362,10 +699,8 @@ function renderRetrieval(meta) {
   document.getElementById('ret-partition').textContent = '分区: ' + meta.partition;
   document.getElementById('ret-count').textContent = '候选: ' + meta.candidates_count + ' 条';
   document.getElementById('ret-top').textContent = '重排 Top-' + meta.top_results.length;
-
   const body = document.getElementById('retrieval-body');
   body.innerHTML = '';
-
   meta.top_results.forEach(r => {
     const pct = Math.round(r.score * 100);
     const scoreColor = pct >= 80 ? '#16a34a' : pct >= 60 ? '#ca8a04' : '#dc2626';
@@ -374,11 +709,8 @@ function renderRetrieval(meta) {
     card.innerHTML = `
       <div class="result-card-header">
         <div class="rank-badge">${r.rank}</div>
-        <div class="score-bar">
-          <div class="score-bar-bg">
-            <div class="score-bar-fill" style="width:${pct}%"></div>
-          </div>
-        </div>
+        <div class="score-bar"><div class="score-bar-bg">
+          <div class="score-bar-fill" style="width:${pct}%"></div></div></div>
         <span style="font-size:12px;font-weight:700;color:${scoreColor}">${pct}%</span>
         <div class="meta-tags">
           ${r.inquiry_type ? `<span class="meta-tag">📋 ${escHtml(r.inquiry_type)}</span>` : ''}
@@ -428,14 +760,12 @@ function copyReply() {
 async function processEmail() {
   const emailText = document.getElementById('email-input').value.trim();
   if (!emailText) { showError('请先粘贴邮件内容'); return; }
-
   hideAll();
   setStatus('翻译邮件 + 意图分类...');
   document.getElementById('process-btn').disabled = true;
 
   const resp = await fetch('/api/process', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({email_text: emailText}),
   });
 
@@ -445,10 +775,8 @@ async function processEmail() {
     setStatus(''); document.getElementById('process-btn').disabled = false; return;
   }
 
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
+  const reader = resp.body.getReader(), decoder = new TextDecoder();
   let buf = '';
-
   while (true) {
     const {done, value} = await reader.read();
     if (done) break;
@@ -459,52 +787,38 @@ async function processEmail() {
       if (line.startsWith('event: ')) { evType = line.slice(7).trim(); continue; }
       if (!line.startsWith('data: ')) continue;
       let data; try { data = JSON.parse(line.slice(6)); } catch { continue; }
-
       if (evType === 'translate') {
-        const block = document.getElementById('email-zh-block');
-        block.style.display = 'flex';
+        document.getElementById('email-zh-block').style.display = 'flex';
         document.getElementById('email-zh-text').textContent = data.email_zh || '';
         setStatus('意图分类...');
-
       } else if (evType === 'intent') {
         setStatus('向量+BM25 混合检索...');
-
       } else if (evType === 'meta') {
-        setStatus('AI 生成回复...');
-        renderMeta(data);
-
+        setStatus('AI 生成回复...'); renderMeta(data);
       } else if (evType === 'section') {
         if (data.name === 'summary') {
-          const b = document.getElementById('summary-block');
-          b.style.display = 'flex';
+          document.getElementById('summary-block').style.display = 'flex';
           document.getElementById('summary-text').classList.add('streaming', 'cursor');
         } else if (data.name === 'reply') {
           document.getElementById('summary-text').classList.remove('streaming','cursor');
-          const b = document.getElementById('reply-block');
-          b.style.display = 'flex';
+          document.getElementById('reply-block').style.display = 'flex';
           document.getElementById('reply-text').classList.add('streaming', 'cursor');
         }
-
       } else if (evType === 'token') {
         const el = document.getElementById(data.section === 'reply' ? 'reply-text' : 'summary-text');
         el.textContent += data.text;
-
       } else if (evType === 'reply_zh') {
         document.getElementById('reply-text').classList.remove('streaming','cursor');
-        const b = document.getElementById('reply-zh-block');
-        b.style.display = 'flex';
+        document.getElementById('reply-zh-block').style.display = 'flex';
         document.getElementById('reply-zh-text').textContent = data.text || '';
-
       } else if (evType === 'done') {
         document.getElementById('summary-text').classList.remove('streaming','cursor');
         document.getElementById('reply-text').classList.remove('streaming','cursor');
         setStatus('');
-
       } else if (evType === 'error') {
         const msg = data.message || '处理出错';
-        if (msg.includes('402') || msg.includes('Insufficient Balance')) {
-          showError('⚠️ DeepSeek 余额不足（402），请前往 platform.deepseek.com 充值。');
-        } else { showError(msg); }
+        showError(msg.includes('402') || msg.includes('Insufficient Balance')
+          ? '⚠️ DeepSeek 余额不足（402），请前往 platform.deepseek.com 充值。' : msg);
         setStatus('');
       }
       evType = null;
@@ -517,100 +831,566 @@ document.getElementById('email-input').addEventListener('keydown', e => {
   if (e.ctrlKey && e.key === 'Enter') processEmail();
 });
 
-// ── 数据看板 ──
+// ══════════════════════════════════════════════════════
+// 数据看板
+// ══════════════════════════════════════════════════════
 let chartsBuilt = false;
 async function loadDashboard() {
   if (chartsBuilt) return;
   try {
-    const data = await fetch('/api/analytics').then(r => r.json());
-    buildCharts(data);
+    const [analytics, metrics] = await Promise.all([
+      fetch('/api/analytics').then(r => r.ok ? r.json() : null),
+      fetch('/api/metrics').then(r => r.ok ? r.json() : null),
+    ]);
+    if (analytics) buildCharts(analytics);
+    if (metrics) buildMetricCharts(metrics);
     chartsBuilt = true;
-  } catch(e) {
-    console.error('看板数据加载失败:', e);
-  }
+  } catch(e) { console.error('看板数据加载失败:', e); }
 }
 
 const CHART_COLORS = [
   '#5c53e8','#16a34a','#ca8a04','#dc2626','#2563eb',
   '#7c3aed','#ea580c','#0891b2','#db2777','#64748b',
 ];
+const lightScales = () => ({
+  x: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#f1f5f9' } },
+  y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#f1f5f9' } },
+});
+const legendOpts = () => ({ labels: { color: '#4a5568', font: {size:11} } });
 
 function buildCharts(d) {
-  const lightScales = {
-    x: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#f1f5f9' } },
-    y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#f1f5f9' } },
-  };
-  const legendOpts = { labels: { color: '#4a5568', font: {size:11} } };
-
-  // 问询类型（Doughnut）
   const inqKeys = Object.keys(d.inquiry_type_dist || {}).slice(0, 8);
   new Chart(document.getElementById('chart-inquiry'), {
     type: 'doughnut',
     data: { labels: inqKeys, datasets: [{
       data: inqKeys.map(k => d.inquiry_type_dist[k]),
-      backgroundColor: CHART_COLORS,
-      borderWidth: 2,
-      borderColor: '#fff',
+      backgroundColor: CHART_COLORS, borderWidth: 2, borderColor: '#fff',
     }]},
-    options: { plugins: { legend: legendOpts } },
+    options: { plugins: { legend: legendOpts() } },
   });
 
-  // 版本热点（横向 Bar）
   const verKeys = Object.keys(d.version_dist || {}).slice(0, 10);
   new Chart(document.getElementById('chart-version'), {
     type: 'bar',
     data: { labels: verKeys, datasets: [{
-      label: '问题数',
-      data: verKeys.map(k => d.version_dist[k]),
-      backgroundColor: '#5c53e855',
-      borderColor: '#5c53e8',
-      borderWidth: 1,
+      label: '问题数', data: verKeys.map(k => d.version_dist[k]),
+      backgroundColor: '#5c53e855', borderColor: '#5c53e8', borderWidth: 1,
     }]},
-    options: { indexAxis: 'y', plugins: { legend: legendOpts }, scales: lightScales },
+    options: { indexAxis: 'y', plugins: { legend: legendOpts() }, scales: lightScales() },
   });
 
-  // 月度趋势（Line）
   const months = Object.keys(d.date_monthly || {}).filter(k => k !== '不明');
   new Chart(document.getElementById('chart-monthly'), {
     type: 'line',
     data: { labels: months, datasets: [{
-      label: '月度问询量',
-      data: months.map(k => d.date_monthly[k]),
-      borderColor: '#5c53e8',
-      backgroundColor: '#5c53e812',
-      fill: true,
-      tension: 0.3,
-      pointRadius: 3,
-      pointBackgroundColor: '#5c53e8',
+      label: '月度问询量', data: months.map(k => d.date_monthly[k]),
+      borderColor: '#5c53e8', backgroundColor: '#5c53e812', fill: true,
+      tension: 0.3, pointRadius: 3, pointBackgroundColor: '#5c53e8',
     }]},
-    options: { plugins: { legend: legendOpts }, scales: lightScales },
+    options: { plugins: { legend: legendOpts() }, scales: lightScales() },
   });
 
-  // 设备分布（Bar）
   const envKeys = Object.keys(d.environment_dist || {}).slice(0, 8);
   new Chart(document.getElementById('chart-env'), {
     type: 'bar',
     data: { labels: envKeys, datasets: [{
-      label: '数量',
-      data: envKeys.map(k => d.environment_dist[k]),
-      backgroundColor: CHART_COLORS,
-      borderWidth: 0,
+      label: '数量', data: envKeys.map(k => d.environment_dist[k]),
+      backgroundColor: CHART_COLORS, borderWidth: 0,
     }]},
-    options: { plugins: { legend: legendOpts }, scales: lightScales },
+    options: { plugins: { legend: legendOpts() }, scales: lightScales() },
   });
 
-  // 分区分布（Doughnut）
   const partKeys = Object.keys(d.by_partition || {});
   new Chart(document.getElementById('chart-partition'), {
     type: 'doughnut',
     data: { labels: partKeys, datasets: [{
       data: partKeys.map(k => d.by_partition[k]),
-      backgroundColor: CHART_COLORS,
-      borderWidth: 2,
-      borderColor: '#fff',
+      backgroundColor: CHART_COLORS, borderWidth: 2, borderColor: '#fff',
     }]},
-    options: { plugins: { legend: legendOpts } },
+    options: { plugins: { legend: legendOpts() } },
   });
+}
+
+function buildMetricCharts(m) {
+  // 置信度分布（grouped bar，按分区）
+  const confDist = m.confidence_dist || {};
+  const partitions = Object.keys(confDist);
+  const bands = ['≥90%', '70–90%', '50–70%', '<50%'];
+  const bandColors = ['#16a34a55','#ca8a0455','#f9731655','#dc262655'];
+  const bandBorders = ['#16a34a','#ca8a04','#f97316','#dc2626'];
+  new Chart(document.getElementById('chart-conf-dist'), {
+    type: 'bar',
+    data: {
+      labels: partitions.length ? partitions : ['暂无数据'],
+      datasets: bands.map((band, i) => ({
+        label: band,
+        data: partitions.map(p => (confDist[p] && confDist[p][band]) || 0),
+        backgroundColor: bandColors[i],
+        borderColor: bandBorders[i],
+        borderWidth: 1,
+      })),
+    },
+    options: { plugins: { legend: legendOpts() }, scales: lightScales() },
+  });
+
+  // 路由等级分布（Doughnut）
+  const lvl = m.level_dist || {};
+  new Chart(document.getElementById('chart-level-dist'), {
+    type: 'doughnut',
+    data: {
+      labels: ['AUTO', 'REVIEW', 'HUMAN'],
+      datasets: [{
+        data: [lvl.AUTO || 0, lvl.REVIEW || 0, lvl.HUMAN || 0],
+        backgroundColor: ['#dcfce7','#fef9c3','#fee2e2'],
+        borderColor: ['#16a34a','#ca8a04','#dc2626'],
+        borderWidth: 2,
+      }],
+    },
+    options: { plugins: { legend: legendOpts() } },
+  });
+
+  // 每日请求量（Line）
+  const daily = m.daily_requests || [];
+  new Chart(document.getElementById('chart-daily'), {
+    type: 'line',
+    data: {
+      labels: daily.map(d => d.date.slice(5)),
+      datasets: [{
+        label: '每日处理量',
+        data: daily.map(d => d.count),
+        borderColor: '#5c53e8', backgroundColor: '#5c53e812',
+        fill: true, tension: 0.3, pointRadius: 2,
+        pointBackgroundColor: '#5c53e8',
+      }],
+    },
+    options: { plugins: { legend: legendOpts() }, scales: lightScales() },
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// 知识库管理
+// ══════════════════════════════════════════════════════
+const kbState = {
+  currentPartition: '全部',
+  currentPage: 1,
+  totalPages: 1,
+  totalEntries: 0,
+  partitions: [],
+};
+
+let editTarget = { partition: '', id: '' };
+let deleteTarget = { partition: '', id: '', preview: '' };
+let _kbLoaded = false;
+
+async function loadKBTab() {
+  if (_kbLoaded) return;
+  await refreshPartitions();
+  await loadPage(1);
+  _kbLoaded = true;
+  // 配置面板分区 select
+  await loadConfigPartitions();
+}
+
+async function refreshPartitions() {
+  try {
+    const data = await fetch('/api/kb/partitions').then(r => r.json());
+    kbState.partitions = data.partitions || [];
+    renderPartitionFilters(kbState.partitions);
+    // datalist for import
+    const dl = document.getElementById('partition-list');
+    dl.innerHTML = kbState.partitions.map(p => `<option value="${escHtml(p.name)}">`).join('');
+  } catch(e) { console.error('分区加载失败', e); }
+}
+
+function renderPartitionFilters(parts) {
+  const wrap = document.getElementById('partition-filter-btns');
+  wrap.innerHTML = `<button class="part-filter-btn ${kbState.currentPartition === '全部' ? 'active' : ''}"
+    onclick="filterPartition('全部', this)">全部</button>`;
+  parts.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'part-filter-btn' + (kbState.currentPartition === p.name ? ' active' : '');
+    btn.textContent = `${p.name} (${p.count})`;
+    btn.onclick = function() { filterPartition(p.name, this); };
+    wrap.appendChild(btn);
+  });
+}
+
+async function filterPartition(partition, btn) {
+  kbState.currentPartition = partition;
+  document.querySelectorAll('.part-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  await loadPage(1);
+}
+
+async function loadPage(page) {
+  kbState.currentPage = page;
+  const p = kbState.currentPartition;
+  const url = `/api/kb/entries/${encodeURIComponent(p)}?page=${page}&page_size=20`;
+  try {
+    const data = await fetch(url).then(r => r.json());
+    kbState.totalPages = data.total_pages;
+    kbState.totalEntries = data.total;
+    renderKBCards(data.entries || []);
+    renderPagination(page, data.total_pages);
+    document.getElementById('kb-total-badge').textContent =
+      `共 ${data.total} 条 / 第 ${page} 页（共 ${data.total_pages} 页）`;
+  } catch(e) {
+    document.getElementById('kb-grid').innerHTML =
+      `<div style="color:#c53030;grid-column:1/-1">加载失败: ${e.message}</div>`;
+  }
+}
+
+function renderKBCards(entries) {
+  const grid = document.getElementById('kb-grid');
+  if (!entries.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:13px;grid-column:1/-1;padding:20px 0">暂无数据</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  entries.forEach(e => {
+    const part = e.partition || kbState.currentPartition;
+    const hasZh = e.question_zh && e.question_zh !== '' && !e.question_zh.includes('[内容含');
+    const card = document.createElement('div');
+    card.className = 'kb-card';
+    card.innerHTML = `
+      <div class="kb-card-tags">
+        <span class="kb-tag part">${escHtml(part)}</span>
+        ${e.environment ? `<span class="kb-tag">📱 ${escHtml(e.environment)}</span>` : ''}
+        ${e.app_version ? `<span class="kb-tag">🔖 v${escHtml(e.app_version)}</span>` : ''}
+        ${!hasZh ? '<span class="kb-tag warn">⚠️ 未翻译</span>' : ''}
+      </div>
+      <div class="kb-card-q">${escHtml(e.question_jp)}</div>
+      <div class="kb-card-footer">
+        <div class="kb-card-meta">
+          ${e.date ? `📅 ${escHtml(e.date)}` : ''}
+          ${e.inquiry_type ? ` · ${escHtml(e.inquiry_type)}` : ''}
+        </div>
+        <div class="kb-card-actions">
+          <button class="btn-sm btn-sm-edit" onclick='openEditModal(${JSON.stringify(part)},${JSON.stringify(String(e.id))})'>编辑</button>
+          <button class="btn-sm btn-sm-del"  onclick='openDeleteModal(${JSON.stringify(part)},${JSON.stringify(String(e.id))},${JSON.stringify((e.question_jp||"").slice(0,60))})'>删除</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function renderPagination(page, total) {
+  const wrap = document.getElementById('kb-pagination');
+  if (total <= 1) { wrap.innerHTML = ''; return; }
+  let html = '';
+
+  // Prev
+  html += `<button class="page-btn" onclick="loadPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+
+  // Sliding window: always show first, last, current ±2
+  const pages = new Set();
+  [1, total, page-2, page-1, page, page+1, page+2]
+    .filter(p => p >= 1 && p <= total)
+    .forEach(p => pages.add(p));
+  const sorted = [...pages].sort((a,b) => a-b);
+
+  let prev = 0;
+  sorted.forEach(p => {
+    if (prev && p - prev > 1) html += `<span class="page-ellipsis">…</span>`;
+    html += `<button class="page-btn ${p===page?'active':''}" onclick="loadPage(${p})">${p}</button>`;
+    prev = p;
+  });
+
+  // Next + Last
+  html += `<button class="page-btn" onclick="loadPage(${page+1})" ${page===total?'disabled':''}>›</button>`;
+  html += `<button class="page-btn" onclick="loadPage(${total})" ${page===total?'disabled':''} title="末页">»</button>`;
+
+  // Jump input
+  html += `<div class="jump-form">跳转<input type="number" id="jump-input" min="1" max="${total}"
+    onkeydown="if(event.key==='Enter'){const v=parseInt(this.value);if(v>=1&&v<=${total})loadPage(v)}"
+    placeholder="${page}"><button class="btn-secondary" style="padding:4px 10px;font-size:12px"
+    onclick="const v=parseInt(document.getElementById('jump-input').value);if(v>=1&&v<=${total})loadPage(v)">GO</button></div>`;
+
+  wrap.innerHTML = html;
+}
+
+// ── 编辑 Modal ──
+let _editMode = false;
+
+async function openEditModal(partition, id) {
+  const entry = await fetch(`/api/kb/entries/${encodeURIComponent(partition)}/${encodeURIComponent(id)}`).then(r => r.json());
+  editTarget = { partition, id };
+  _editMode = false;
+
+  document.getElementById('edit-modal-title').textContent = '查看条目';
+  document.getElementById('edit-toggle-btn').textContent = '编辑';
+  document.getElementById('save-entry-btn').style.display = 'none';
+  document.getElementById('edit-rebuild-wrap').style.display = 'none';
+
+  const fields = {
+    'edit-q-jp': entry.question_jp, 'edit-q-zh': entry.question_zh,
+    'edit-a-jp': entry.answer_jp,   'edit-a-zh': entry.answer_zh,
+    'edit-inq':  entry.inquiry_type,'edit-env':  entry.environment,
+    'edit-ver':  entry.app_version, 'edit-date': entry.date,
+  };
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    el.value = val || '';
+    el.readOnly = true;
+  });
+
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function toggleEditMode() {
+  _editMode = !_editMode;
+  const readOnly = !_editMode;
+  ['edit-q-jp','edit-q-zh','edit-a-jp','edit-a-zh','edit-inq','edit-env','edit-ver','edit-date']
+    .forEach(id => document.getElementById(id).readOnly = readOnly);
+  document.getElementById('edit-toggle-btn').textContent = _editMode ? '取消编辑' : '编辑';
+  document.getElementById('save-entry-btn').style.display = _editMode ? 'inline-block' : 'none';
+  document.getElementById('edit-modal-title').textContent = _editMode ? '编辑条目' : '查看条目';
+}
+
+async function saveEntry() {
+  const body = {
+    question_jp: document.getElementById('edit-q-jp').value,
+    question_zh: document.getElementById('edit-q-zh').value,
+    answer_jp:   document.getElementById('edit-a-jp').value,
+    answer_zh:   document.getElementById('edit-a-zh').value,
+    inquiry_type: document.getElementById('edit-inq').value,
+    environment:  document.getElementById('edit-env').value,
+    app_version:  document.getElementById('edit-ver').value,
+    date:         document.getElementById('edit-date').value,
+  };
+  const resp = await fetch(
+    `/api/kb/entries/${encodeURIComponent(editTarget.partition)}/${encodeURIComponent(editTarget.id)}`,
+    { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) }
+  );
+  if (!resp.ok) { alert('保存失败: ' + (await resp.json()).detail); return; }
+
+  // Rebuild SSE
+  document.getElementById('save-entry-btn').disabled = true;
+  document.getElementById('edit-toggle-btn').disabled = true;
+  const wrap = document.getElementById('edit-rebuild-wrap');
+  const bar  = document.getElementById('edit-progress-bar');
+  const msg  = document.getElementById('edit-rebuild-msg');
+  wrap.style.display = 'block'; bar.style.width = '0%';
+  msg.textContent = '正在重建索引...';
+
+  await runRebuildSSE(editTarget.partition, bar, msg, async () => {
+    document.getElementById('save-entry-btn').disabled = false;
+    document.getElementById('edit-toggle-btn').disabled = false;
+    _kbLoaded = false;
+    await loadPage(kbState.currentPage);
+    setTimeout(() => closeEditModal(), 800);
+  });
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+}
+
+// ── 删除 Modal ──
+function openDeleteModal(partition, id, preview) {
+  deleteTarget = { partition, id };
+  document.getElementById('delete-preview').textContent = preview;
+  document.getElementById('delete-rebuild-wrap').style.display = 'none';
+  document.getElementById('confirm-delete-btn').disabled = false;
+  document.getElementById('delete-modal').classList.add('show');
+}
+
+async function confirmDelete() {
+  document.getElementById('confirm-delete-btn').disabled = true;
+  const resp = await fetch(
+    `/api/kb/entries/${encodeURIComponent(deleteTarget.partition)}/${encodeURIComponent(deleteTarget.id)}`,
+    { method: 'DELETE' }
+  );
+  if (!resp.ok) { alert('删除失败: ' + (await resp.json()).detail); document.getElementById('confirm-delete-btn').disabled = false; return; }
+
+  const wrap = document.getElementById('delete-rebuild-wrap');
+  const bar  = document.getElementById('delete-progress-bar');
+  const msg  = document.getElementById('delete-rebuild-msg');
+  wrap.style.display = 'block'; bar.style.width = '0%';
+  msg.textContent = '正在重建索引...';
+
+  await runRebuildSSE(deleteTarget.partition, bar, msg, async () => {
+    _kbLoaded = false;
+    await refreshPartitions();
+    await loadPage(kbState.currentPage);
+    setTimeout(() => closeDeleteModal(), 800);
+  });
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('show');
+}
+
+// ── SSE Rebuild helper ──
+async function runRebuildSSE(partition, bar, msg, onDone) {
+  const resp = await fetch(`/api/kb/rebuild/${encodeURIComponent(partition)}`, { method: 'POST' });
+  const reader = resp.body.getReader(), decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, {stream: true});
+    const lines = buf.split('\n'); buf = lines.pop();
+    let evType = null;
+    for (const line of lines) {
+      if (line.startsWith('event: ')) { evType = line.slice(7).trim(); continue; }
+      if (!line.startsWith('data: ')) continue;
+      let data; try { data = JSON.parse(line.slice(6)); } catch { continue; }
+      if (evType === 'start') { msg.textContent = `重建中 (${data.count} 条)...`; }
+      else if (evType === 'progress') { bar.style.width = data.pct + '%'; }
+      else if (evType === 'done') { bar.style.width = '100%'; msg.textContent = `✓ 完成（${data.elapsed_ms}ms）`; await onDone(); }
+      else if (evType === 'error') { msg.textContent = '❌ ' + data.message; }
+      evType = null;
+    }
+  }
+}
+
+// ── 导入 Modal ──
+function openImportModal() {
+  document.getElementById('import-modal').classList.add('show');
+  document.getElementById('import-progress-wrap').style.display = 'none';
+  document.getElementById('import-result-msg').style.display = 'none';
+  document.getElementById('import-submit-btn').disabled = false;
+  document.getElementById('import-progress-bar').style.width = '0%';
+}
+function closeImportModal() { document.getElementById('import-modal').classList.remove('show'); }
+
+function onImportModeChange() {
+  const mode = document.getElementById('import-mode').value;
+  ['field-qa-excel','field-paragraph-excel','field-docx-qa'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+  if (mode === 'qa_excel')         document.getElementById('field-qa-excel').classList.add('show');
+  if (mode === 'paragraph_excel')  document.getElementById('field-paragraph-excel').classList.add('show');
+  if (mode === 'docx_qa')          document.getElementById('field-docx-qa').classList.add('show');
+}
+
+async function submitImport() {
+  const fileEl = document.getElementById('import-file');
+  const partition = document.getElementById('import-partition').value.trim();
+  if (!fileEl.files.length) { alert('请选择文件'); return; }
+  if (!partition) { alert('请填写目标分区名'); return; }
+
+  document.getElementById('import-submit-btn').disabled = true;
+  const wrap = document.getElementById('import-progress-wrap');
+  const bar  = document.getElementById('import-progress-bar');
+  const msg  = document.getElementById('import-progress-msg');
+  const result = document.getElementById('import-result-msg');
+  wrap.style.display = 'block'; result.style.display = 'none';
+
+  const mode = document.getElementById('import-mode').value;
+  const fd = new FormData();
+  fd.append('file', fileEl.files[0]);
+  fd.append('partition', partition);
+  fd.append('description', document.getElementById('import-desc').value);
+  fd.append('parse_mode', mode);
+  fd.append('q_col',    document.getElementById('import-qcol').value);
+  fd.append('a_col',    document.getElementById('import-acol').value);
+  fd.append('text_col', document.getElementById('import-textcol').value);
+  fd.append('q_marker', document.getElementById('import-qmarker').value);
+  fd.append('a_marker', document.getElementById('import-amarker').value);
+
+  const resp = await fetch('/api/kb/import', { method: 'POST', body: fd });
+  const reader = resp.body.getReader(), decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, {stream: true});
+    const lines = buf.split('\n'); buf = lines.pop();
+    let evType = null;
+    for (const line of lines) {
+      if (line.startsWith('event: ')) { evType = line.slice(7).trim(); continue; }
+      if (!line.startsWith('data: ')) continue;
+      let data; try { data = JSON.parse(line.slice(6)); } catch { continue; }
+      if (evType === 'start')    { msg.textContent = `解析 ${data.filename}...`; bar.style.width = '5%'; }
+      else if (evType === 'parsed')  { msg.textContent = `解析完成 ${data.count} 条，写入分区...`; bar.style.width = '30%'; }
+      else if (evType === 'progress'){ bar.style.width = data.pct + '%'; msg.textContent = data.message || `${data.pct}%`; }
+      else if (evType === 'done') {
+        bar.style.width = '100%';
+        msg.textContent = '✓ 完成！';
+        result.textContent = `✓ 成功导入 ${data.imported} 条到分区「${data.partition}」`;
+        result.style.display = 'block';
+        document.getElementById('import-submit-btn').disabled = false;
+        _kbLoaded = false;
+        await refreshPartitions();
+        await loadConfigPartitions();
+      } else if (evType === 'error') {
+        msg.textContent = '❌ ' + data.message;
+        document.getElementById('import-submit-btn').disabled = false;
+      }
+      evType = null;
+    }
+  }
+}
+
+// ── 检索配置 ──
+function toggleConfig() {
+  const body = document.getElementById('config-body');
+  const icon = document.getElementById('config-expand-icon');
+  const open = body.classList.toggle('open');
+  icon.textContent = open ? '▲ 收起' : '▼ 展开';
+}
+
+async function loadConfigPartitions() {
+  const sel = document.getElementById('cfg-partition');
+  try {
+    const data = await fetch('/api/kb/partitions').then(r => r.json());
+    const parts = (data.partitions || []).map(p => p.name);
+    sel.innerHTML = parts.map(p => `<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('');
+    if (parts.length) loadPartitionConfig();
+  } catch(e) {}
+}
+
+async function loadPartitionConfig() {
+  const partition = document.getElementById('cfg-partition').value;
+  if (!partition) return;
+  try {
+    const cfg = await fetch(`/api/kb/config/${encodeURIComponent(partition)}`).then(r => r.ok ? r.json() : null);
+    if (!cfg) return;
+    const vec = cfg.vec_weight ?? 0.70;
+    document.getElementById('cfg-vec').value = vec;
+    document.getElementById('cfg-vec-val').textContent = vec.toFixed(2);
+    document.getElementById('cfg-rrf-val').textContent = (1 - vec).toFixed(2);
+    document.getElementById('cfg-cand').value  = cfg.candidate_k ?? 20;
+    document.getElementById('cfg-topk').value  = cfg.top_k ?? 5;
+    document.getElementById('cfg-auto').value  = cfg.auto_threshold ?? 0.90;
+    document.getElementById('cfg-auto-val').textContent   = (cfg.auto_threshold ?? 0.90).toFixed(2);
+    document.getElementById('cfg-review').value = cfg.review_threshold ?? 0.70;
+    document.getElementById('cfg-review-val').textContent = (cfg.review_threshold ?? 0.70).toFixed(2);
+    document.getElementById('cfg-save-msg').textContent = '';
+  } catch(e) {}
+}
+
+function onVecSlide() {
+  const v = parseFloat(document.getElementById('cfg-vec').value);
+  document.getElementById('cfg-vec-val').textContent = v.toFixed(2);
+  document.getElementById('cfg-rrf-val').textContent = (1 - v).toFixed(2);
+}
+
+async function savePartitionConfig() {
+  const partition = document.getElementById('cfg-partition').value;
+  const vec = parseFloat(document.getElementById('cfg-vec').value);
+  const body = {
+    vec_weight:        vec,
+    rrf_weight:        parseFloat((1 - vec).toFixed(2)),
+    candidate_k:       parseInt(document.getElementById('cfg-cand').value),
+    top_k:             parseInt(document.getElementById('cfg-topk').value),
+    auto_threshold:    parseFloat(document.getElementById('cfg-auto').value),
+    review_threshold:  parseFloat(document.getElementById('cfg-review').value),
+  };
+  try {
+    const resp = await fetch(`/api/kb/config/${encodeURIComponent(partition)}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    if (resp.ok) {
+      document.getElementById('cfg-save-msg').textContent = '✓ 已保存';
+      setTimeout(() => document.getElementById('cfg-save-msg').textContent = '', 3000);
+    } else {
+      const err = await resp.json();
+      alert('保存失败: ' + (err.detail || JSON.stringify(err)));
+    }
+  } catch(e) { alert('请求失败: ' + e.message); }
 }
 </script>
 
