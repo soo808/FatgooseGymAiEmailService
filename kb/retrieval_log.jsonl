@@ -1,1 +1,51 @@
 {"ts": "2026-04-11T05:47:31.136717+00:00", "partition": "不具合", "confidence": 94.7, "level": "AUTO", "top1_score": 0.9471, "top5_scores": [0.9471, 0.907, 0.8815, 0.8686, 0.7338], "latency_ms": 10357}
+{"ts": "2026-04-11T10:34:13.292228+00:00", "partition": "不具合", "confidence": 94.7, "level": "AUTO", "top1_score": 0.9471, "top5_scores": [0.9471, 0.907, 0.8815, 0.8686, 0.7338], "latency_ms": 9860}
+{"ts": "2026-04-11T10:55:10.007409+00:00", "partition": "不具合", "confidence": 93.2, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 7281}
+{"ts": "2026-04-11T10:56:05.953605+00:00", "partition": "不具合", "confidence": 93.2, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 8071}
+{"ts": "2026-04-11T10:57:02.889254+00:00", "partition": "意見要望", "confidence": 95.9, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 7039}
+{"ts": "2026-04-11T10:58:00.246414+00:00", "partition": "不具合", "confidence": 94.3, "level": "AUTO", "top1_score": 0.9426, "top5_scores": [0.9426, 0.937, 0.9048, 0.8968, 0.8808], "latency_ms": 10870}
+{"ts": "2026-04-11T11:00:34.900575+00:00", "partition": "購入", "confidence": 96.8, "level": "AUTO", "top1_score": 0.9679, "top5_scores": [0.9679, 0.9244, 0.9197, 0.9195, 0.906], "latency_ms": 9044}
+{"ts": "2026-04-11T11:01:31.682211+00:00", "partition": "意見要望", "confidence": 95.9, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 9202}
+{"ts": "2026-04-11T11:02:37.515174+00:00", "partition": "意見要望", "confidence": 95.9, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 7859}
+{"ts": "2026-04-11T11:04:06.467335+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.95, "top5_scores": [0.95, 0.8708, 0.8675], "latency_ms": 5953}
+{"ts": "2026-04-11T11:06:12.680576+00:00", "partition": "不具合", "confidence": 92.7, "level": "AUTO", "top1_score": 0.9266, "top5_scores": [0.9266, 0.9141, 0.8286, 0.7239, 0.7196], "latency_ms": 4661}
+{"ts": "2026-04-11T11:25:33.173876+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 10078}
+{"ts": "2026-04-11T11:26:20.358468+00:00", "partition": "その他", "confidence": 91.0, "level": "AUTO", "top1_score": 0.9326, "top5_scores": [0.9326, 0.8933, 0.8916, 0.885, 0.8783], "latency_ms": 7118}
+{"ts": "2026-04-11T11:27:25.749917+00:00", "partition": "意見要望", "confidence": 86.8, "level": "REVIEW", "top1_score": 0.8916, "top5_scores": [0.8916, 0.8824, 0.8728], "latency_ms": 5086}
+{"ts": "2026-04-11T11:29:01.191065+00:00", "partition": "その他", "confidence": 91.0, "level": "AUTO", "top1_score": 0.9326, "top5_scores": [0.9326, 0.8933, 0.8916, 0.885, 0.8783], "latency_ms": 6576}
+{"ts": "2026-04-11T11:29:41.842273+00:00", "partition": "その他", "confidence": 89.6, "level": "AUTO", "top1_score": 0.9224, "top5_scores": [0.9224, 0.9156, 0.9083, 0.9057, 0.8851], "latency_ms": 5640}
+{"ts": "2026-04-11T11:31:06.042301+00:00", "partition": "その他", "confidence": 89.6, "level": "AUTO", "top1_score": 0.9224, "top5_scores": [0.9224, 0.9156, 0.9083, 0.9057, 0.8851], "latency_ms": 5839}
+{"ts": "2026-04-11T11:35:10.657727+00:00", "partition": "購入", "confidence": 89.5, "level": "AUTO", "top1_score": 0.9317, "top5_scores": [0.9317, 0.8825, 0.742, 0.7392, 0.7362], "latency_ms": 7069}
+{"ts": "2026-04-11T11:37:35.932797+00:00", "partition": "購入", "confidence": 88.1, "level": "AUTO", "top1_score": 0.9077, "top5_scores": [0.9077, 0.9065, 0.9009, 0.8983, 0.8919], "latency_ms": 6580}
+{"ts": "2026-04-11T11:46:21.336338+00:00", "partition": "購入", "confidence": 85.4, "level": "HUMAN", "top1_score": 0.8972, "top5_scores": [0.8972, 0.8947, 0.7703], "latency_ms": 6183}
+{"ts": "2026-04-11T11:59:06.456306+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 7986}
+{"ts": "2026-04-11T11:59:58.174543+00:00", "partition": "購入", "confidence": 95.1, "level": "AUTO", "top1_score": 0.9654, "top5_scores": [0.9654, 0.9216, 0.9171], "latency_ms": 7101}
+{"ts": "2026-04-11T12:00:39.175000+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 6555}
+{"ts": "2026-04-11T12:01:25.230106+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 6969}
+{"ts": "2026-04-11T12:05:15.324721+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 7735}
+{"ts": "2026-04-11T12:06:07.229267+00:00", "partition": "購入", "confidence": 85.4, "level": "HUMAN", "top1_score": 0.8972, "top5_scores": [0.8972, 0.8947, 0.8725], "latency_ms": 4931}
+{"ts": "2026-04-11T12:06:52.367651+00:00", "partition": "購入", "confidence": 85.4, "level": "HUMAN", "top1_score": 0.8972, "top5_scores": [0.8972, 0.8947, 0.8725], "latency_ms": 3974}
+{"ts": "2026-04-11T12:21:32.525651+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 8023}
+{"ts": "2026-04-11T12:44:25.406152+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 10522}
+{"ts": "2026-04-11T12:45:25.021060+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 6646}
+{"ts": "2026-04-11T12:46:11.215976+00:00", "partition": "購入", "confidence": 95.1, "level": "AUTO", "top1_score": 0.9654, "top5_scores": [0.9654, 0.9216, 0.9171], "latency_ms": 9289}
+{"ts": "2026-04-11T12:46:37.520713+00:00", "partition": "購入", "confidence": 85.4, "level": "HUMAN", "top1_score": 0.8972, "top5_scores": [0.8972, 0.8947, 0.7703], "latency_ms": 4673}
+{"ts": "2026-04-11T12:49:09.049383+00:00", "partition": "意見要望", "confidence": 87.8, "level": "REVIEW", "top1_score": 0.9002, "top5_scores": [0.9002, 0.8772, 0.8644], "latency_ms": 5790}
+{"ts": "2026-04-11T12:52:11.911019+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 7555}
+{"ts": "2026-04-11T12:53:05.406486+00:00", "partition": "購入", "confidence": 95.1, "level": "AUTO", "top1_score": 0.9654, "top5_scores": [0.9654, 0.9216, 0.9171], "latency_ms": 8618}
+{"ts": "2026-04-11T12:53:43.543747+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 7665}
+{"ts": "2026-04-11T12:54:42.302283+00:00", "partition": "意見要望", "confidence": 87.8, "level": "REVIEW", "top1_score": 0.9002, "top5_scores": [0.9002, 0.8772, 0.8644], "latency_ms": 6332}
+{"ts": "2026-04-11T12:56:30.291502+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 6425}
+{"ts": "2026-04-11T12:57:18.933968+00:00", "partition": "購入", "confidence": 95.1, "level": "AUTO", "top1_score": 0.9654, "top5_scores": [0.9654, 0.9216, 0.9171], "latency_ms": 9674}
+{"ts": "2026-04-11T12:57:58.778440+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 10761}
+{"ts": "2026-04-11T13:01:31.827904+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 8284}
+{"ts": "2026-04-11T13:02:18.597213+00:00", "partition": "意見要望", "confidence": 95.0, "level": "AUTO", "top1_score": 0.959, "top5_scores": [0.959, 0.904, 0.9018], "latency_ms": 8617}
+{"ts": "2026-04-11T13:06:01.878849+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 10538}
+{"ts": "2026-04-11T13:09:08.009346+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 6646}
+{"ts": "2026-04-11T13:09:47.078248+00:00", "partition": "意見要望", "confidence": 87.8, "level": "REVIEW", "top1_score": 0.9002, "top5_scores": [0.9002, 0.8772, 0.8644], "latency_ms": 5652}
+{"ts": "2026-04-11T13:10:33.106256+00:00", "partition": "購入", "confidence": 95.1, "level": "AUTO", "top1_score": 0.9654, "top5_scores": [0.9654, 0.9216, 0.9171], "latency_ms": 8638}
+{"ts": "2026-04-11T13:11:02.496773+00:00", "partition": "購入", "confidence": 85.4, "level": "HUMAN", "top1_score": 0.8972, "top5_scores": [0.8972, 0.8947, 0.7703], "latency_ms": 6391}
+{"ts": "2026-04-11T13:28:37.384199+00:00", "partition": "不具合", "confidence": 88.6, "level": "AUTO", "top1_score": 0.9318, "top5_scores": [0.9318, 0.9123, 0.8884, 0.8765, 0.8722], "latency_ms": 8837}
+{"ts": "2026-04-11T13:29:15.540525+00:00", "partition": "意見要望", "confidence": 87.8, "level": "REVIEW", "top1_score": 0.9002, "top5_scores": [0.9002, 0.8772, 0.8644], "latency_ms": 8197}
+{"ts": "2026-04-11T13:30:02.528686+00:00", "partition": "購入", "confidence": 95.1, "level": "AUTO", "top1_score": 0.9654, "top5_scores": [0.9654, 0.9216, 0.9171], "latency_ms": 9607}
+{"ts": "2026-04-11T13:30:31.922172+00:00", "partition": "購入", "confidence": 85.4, "level": "HUMAN", "top1_score": 0.8972, "top5_scores": [0.8972, 0.8947, 0.7703], "latency_ms": 4353}

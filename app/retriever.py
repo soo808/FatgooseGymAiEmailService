@@ -69,9 +69,15 @@ class HybridRetriever:
 
         self.partitions: dict[str, PartitionIndex] = {}
         for d in parts_dir.iterdir():
-            if d.is_dir() and (d / "qa_pairs.json").exists():
-                self.partitions[d.name] = PartitionIndex(d)
-                print(f"[Retriever] 加载分区 [{d.name}] — {len(self.partitions[d.name].qa_pairs)} 条")
+            if not d.is_dir():
+                continue
+            required = ["qa_pairs.json", "faiss.index", "bm25.pkl"]
+            missing = [f for f in required if not (d / f).exists()]
+            if missing:
+                print(f"[Retriever] 跳过分区 [{d.name}]：索引文件缺失 {missing}（请重新导入或重建索引）")
+                continue
+            self.partitions[d.name] = PartitionIndex(d)
+            print(f"[Retriever] 加载分区 [{d.name}] — {len(self.partitions[d.name].qa_pairs)} 条")
 
         if not self.partitions:
             raise FileNotFoundError("partitions/ 下未找到有效分区，请重新运行 build_kb.py")
@@ -132,7 +138,7 @@ class HybridRetriever:
         if target:
             results = self._search_partition(target, query_vec, query_tokens, _candidate_k)
             source_name = target.name
-            raw_candidate_count = min(_candidate_k * 2, len(target.qa_pairs))
+            raw_candidate_count = _candidate_k   # 每路检索 Top-K（两路并集实际更多）
         else:
             merged: list[dict] = []
             for name, part in self.partitions.items():
@@ -141,7 +147,7 @@ class HybridRetriever:
             merged.sort(key=lambda x: x["final_score"], reverse=True)
             results = merged
             source_name = "全分区"
-            raw_candidate_count = sum(len(p.qa_pairs) for p in self.partitions.values())
+            raw_candidate_count = _candidate_k
 
         top = results[:_top_k]
         for rank, item in enumerate(top, 1):

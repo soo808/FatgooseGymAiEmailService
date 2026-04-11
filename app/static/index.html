@@ -697,8 +697,8 @@ function renderRetrieval(meta) {
   const panel = document.getElementById('retrieval-panel');
   panel.style.display = 'block';
   document.getElementById('ret-partition').textContent = '分区: ' + meta.partition;
-  document.getElementById('ret-count').textContent = '候选: ' + meta.candidates_count + ' 条';
-  document.getElementById('ret-top').textContent = '重排 Top-' + meta.top_results.length;
+  document.getElementById('ret-count').textContent = '单路Top-' + meta.candidates_count + '（vec∪bm25后重排）';
+  document.getElementById('ret-top').textContent = 'Top-' + meta.top_results.length + ' 结果';
   const body = document.getElementById('retrieval-body');
   body.innerHTML = '';
   meta.top_results.forEach(r => {
@@ -1384,8 +1384,10 @@ async function savePartitionConfig() {
       method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
     });
     if (resp.ok) {
-      document.getElementById('cfg-save-msg').textContent = '✓ 已保存';
-      setTimeout(() => document.getElementById('cfg-save-msg').textContent = '', 3000);
+      const result = await resp.json();
+      const hot = result._reload_ok !== false ? '· 已热更新' : '· ⚠️ 需重启服务器生效';
+      document.getElementById('cfg-save-msg').textContent = '✓ 已保存 ' + hot;
+      setTimeout(() => document.getElementById('cfg-save-msg').textContent = '', 4000);
     } else {
       const err = await resp.json();
       alert('保存失败: ' + (err.detail || JSON.stringify(err)));

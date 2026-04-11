@@ -1,10 +1,14 @@
 """
 classifier.py — 用 DeepSeek 对输入邮件做意图分类，返回分区名
+策略：
+  1. 先尝试从邮件表单字段「お問い合わせ内容の種類」提取分区（正则，无 API 消耗）
+  2. 字段不存在时才调用 DeepSeek LLM 分类
 分区列表和描述从 kb/retrieval_config.json 动态读取（失败时回退硬编码）。
 """
 
 import json
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -19,6 +23,34 @@ _FALLBACK_DESCS = {
     "購入":    "課金・アイテム未反映・返金",
     "その他":  "上記以外の問い合わせ",
 }
+
+# 邮件表单「お問い合わせ内容の種類」字段值 → 分区名的映射
+# 顺序重要：更长/更精确的关键词放前面
+_FORM_FIELD_MAP: list[tuple[str, str]] = [
+    ("不具合",   "不具合"),
+    ("ご意見",   "意見要望"),
+    ("意見要望", "意見要望"),
+    ("要望",     "意見要望"),
+    ("意見",     "意見要望"),
+    ("購入",     "購入"),
+    ("その他",   "その他"),
+]
+
+
+def _extract_partition_from_email(email_text: str) -> str | None:
+    """
+    从邮件正文提取「お問い合わせ内容の種類」字段，映射为分区名。
+    找到字段但无法映射 → 返回 "その他"（不继续调用 LLM）。
+    字段不存在 → 返回 None（触发 LLM 分类兜底）。
+    """
+    m = re.search(r"お問い合わせ内容の種類\s*[：:]\s*(.+)", email_text)
+    if not m:
+        return None
+    raw = m.group(1).strip()
+    for keyword, partition in _FORM_FIELD_MAP:
+        if keyword in raw:
+            return partition
+    return "その他"
 
 _CONFIG_PATH = Path(__file__).parent.parent / "kb" / "retrieval_config.json"
 
@@ -61,8 +93,15 @@ def _load_partitions_from_config() -> tuple[list[str], dict[str, str]]:
 async def classify_intent(email_text: str) -> str:
     """
     返回分区名（动态从配置读取）。
+    优先从邮件表单字段提取；字段不存在时调用 LLM。
     失败时返回 "その他"，不中断主流程。
     """
+    # 1. 优先：从结构化字段提取（快速、零 API 消耗、100% 准确）
+    extracted = _extract_partition_from_email(email_text)
+    if extracted is not None:
+        return extracted
+
+    # 2. 兜底：LLM 语义分类（邮件无表单字段时使用）
     names, descs = _load_partitions_from_config()
     bullets = "\n".join(f"- {n}: {descs.get(n, n)}" for n in names)
     valid_choices = "、".join(f"「{n}」" for n in names)

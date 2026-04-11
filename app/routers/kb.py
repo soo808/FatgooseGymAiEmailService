@@ -168,12 +168,11 @@ async def rebuild_partition(partition: str):
         yield _sse("start", {"count": count})
 
         progress_q: asyncio.Queue = asyncio.Queue()
+        loop = asyncio.get_running_loop()
 
         def progress_cb(done: int, total: int):
             pct = int(done * 100 / total) if total else 0
-            asyncio.get_event_loop().call_soon_threadsafe(
-                progress_q.put_nowait, pct
-            )
+            loop.call_soon_threadsafe(progress_q.put_nowait, pct)
 
         t0 = time.time()
         rebuild_task = asyncio.create_task(
@@ -269,12 +268,11 @@ async def import_file(
 
             # 重建索引
             progress_q: asyncio.Queue = asyncio.Queue()
+            loop = asyncio.get_running_loop()
 
             def progress_cb(done: int, total: int):
                 pct = 50 + int(done * 50 / total) if total else 50
-                asyncio.get_event_loop().call_soon_threadsafe(
-                    progress_q.put_nowait, pct
-                )
+                loop.call_soon_threadsafe(progress_q.put_nowait, pct)
 
             rebuild_task = asyncio.create_task(
                 kb_manager.rebuild_index_for_partition(partition, progress_cb)
@@ -360,9 +358,14 @@ async def update_partition_config(partition: str, body: PartitionConfigBody):
     parts[partition] = merged
     _save_config(cfg)
 
-    # 热更新 retriever 配置
+    # 热更新 retriever 配置（写文件后立即重载内存）
+    reload_ok = False
     from app import kb_manager as _km
-    if _km._retriever is not None:
-        _km._retriever.reload_config()
+    try:
+        if _km._retriever is not None:
+            _km._retriever.reload_config()
+            reload_ok = True
+    except Exception as e:
+        print(f"[警告] reload_config 失败: {e}")
 
-    return merged
+    return {**merged, "_reload_ok": reload_ok}

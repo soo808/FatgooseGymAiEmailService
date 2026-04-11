@@ -224,7 +224,7 @@ async def process_email(req: ProcessRequest, background_tasks: BackgroundTasks):
             search_result = _retriever.search(email_text, partition=partition)
             top_results = search_result["top_results"]
 
-            confidence = top_results[0]["final_score"] if top_results else 0.0
+            confidence = top_results[0]["vec_score"] if top_results else 0.0
             level = _retriever.route(confidence, turns, partition=partition)
 
             latency_ms = int((time.time() - t_start) * 1000)
@@ -233,7 +233,7 @@ async def process_email(req: ProcessRequest, background_tasks: BackgroundTasks):
             top_for_frontend = [
                 {
                     "rank": r["rank"],
-                    "score": r["final_score"],
+                    "score": r["vec_score"],
                     "vec_score": r["vec_score"],
                     "inquiry_type": r["qa"].get("inquiry_type", ""),
                     "environment": r["qa"].get("environment", ""),
