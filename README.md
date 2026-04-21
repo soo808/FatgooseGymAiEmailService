@@ -22,6 +22,12 @@
 
 ---
 
+## 📹 演示视频
+
+> 点击下方链接观看系统完整操作演示（时长约 4 分钟）
+https://github.com/soo808/FatgooseGymAiEmailService/releases/download/demonstration-recording/FatgooseGymAiEmailService-demo-recording-20260421.mp4
+---
+
 ## 技术栈
 
 | 层次 | 技术 |
