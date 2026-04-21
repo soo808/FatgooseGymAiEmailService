@@ -89,13 +89,10 @@ pip install -r requirements.txt
 编辑 `.env`：
 
 ```env
-BAIDU_APPID=你的百度翻译 AppID
-BAIDU_SECRET=你的百度翻译密钥
-DEEPSEEK_API_KEY=sk-你的DeepSeek密钥
+BAIDU_APPID=翻译 AppID
+BAIDU_SECRET=翻译密钥
+DEEPSEEK_API_KEY=sk-OpenAI密钥(本项目用的deepseek)
 ```
-
-- 百度翻译：在 [fanyi-api.baidu.com](https://fanyi-api.baidu.com) 注册，开通「通用文本翻译API」
-- DeepSeek：在 [platform.deepseek.com](https://platform.deepseek.com) 注册并获取 API Key
 
 ### 3. 构建知识库
 
@@ -192,9 +189,9 @@ uvicorn app.main:app --reload --app-dir D:/agenticRAG
 
 | 阶段 | 翻译方式 | 原因 |
 |------|---------|------|
-| 知识库构建（`build_kb.py`） | 百度翻译 API | 批量翻译 2000+ 条，成本低，支持断点续传 |
-| 运行时邮件翻译 | DeepSeek API | 单次调用，需要上下文理解（游戏术语） |
-| 运行时回复翻译 | DeepSeek API | 同上 |
+| 知识库构建（`build_kb.py`） | 翻译 API | 批量翻译 2000+ 条，成本低，支持断点续传 |
+| 运行时邮件翻译 | LLM API | 单次调用，需要上下文理解（游戏术语） |
+| 运行时回复翻译 | LLM API | 同上 |
 | 在线导入条目 | 留空（⚠️ 未翻译） | 导入后可手动填写，不影响向量检索 |
 
 ---
@@ -205,10 +202,7 @@ uvicorn app.main:app --reload --app-dir D:/agenticRAG
 A: 已通过 `http.client.HTTPSConnection` 直连解决（绕过系统代理 + OP_IGNORE_UNEXPECTED_EOF），无需修改。
 
 **Q: 翻译出现 `[内容含敏感词，翻译已跳过]`**
-A: 百度错误码 20003，该条 QA 对会保留占位符继续处理，不影响整体构建。
-
-**Q: DeepSeek 402 余额不足**
-A: 前端会显示提示。前往 platform.deepseek.com 充值后重试即可恢复生成功能。
+A: 错误码 20003，该条 QA 对会保留占位符继续处理，不影响整体构建。
 
 **Q: 首次运行很慢**
 A: multilingual-e5-base 模型约 280MB，会在首次使用时自动从 HuggingFace 下载，之后本地缓存复用。进程内只加载一次（model singleton）。
