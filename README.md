@@ -24,8 +24,7 @@
 
 ## 📹 演示视频
 
-![Uploading emailAiReply-recording.gif…]()
-
+<img width="1994" height="1040" alt="emailAiReply-recording" src="https://github.com/user-attachments/assets/14ae3d80-a048-4b9f-8da5-aa8f62d4df35" />
 
 
 > 点击下方链接观看系统完整操作演示（时长约 4 分钟）
